@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -6,11 +5,10 @@ import 'package:uuid/uuid.dart';
 
 import '../components/toast.dart';
 import '../providers/api_provider.dart';
-import '../providers/veilnet_provider.dart';
 import '../providers/domain_provider.dart';
 import '../providers/portal_provider.dart';
 import '../providers/rift_provider.dart';
-import '../providers/user_provider.dart';
+import '../providers/veilnet_provider.dart';
 import 'glass_card.dart';
 
 class DomainCard extends HookConsumerWidget {
@@ -20,7 +18,6 @@ class DomainCard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(userProvider);
     final veilnet = ref.watch(veilnetNotifierProvider);
     final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
     final isBusy = useState(false);
