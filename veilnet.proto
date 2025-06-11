@@ -1,0 +1,125 @@
+syntax = "proto3";
+
+package veilnet;
+
+option go_package = "github.com/ulfaric/veilnet/proto";
+
+enum MessageType {
+    RTC_OFFER = 0;
+    RTC_ANSWER = 1;
+    RTC_SYNC = 2;
+    CANDIDATE_OFFER = 3;
+    CANDIDATE_ANSWER = 4;
+
+    ARP_REQUEST = 5;
+    ARP_RESPONSE = 6;
+    ARP_UPDATE = 7;
+
+    STREAM_REQUEST = 8;
+    STREAM_RESPONSE = 9;
+    STREAM_UPDATE = 10;
+
+    DATA = 11;
+
+    CMD_ADD_LOCAL_NETWORK = 12;
+    CMD_REMOVE_LOCAL_NETWORK = 13;
+    CMD_ACK = 14;
+    CMD_NACK = 15;
+
+    IPC_START = 16;
+    IPC_STOP = 17;
+    IPC_ACK = 18;
+    IPC_NACK = 19;
+}
+
+message Header {
+    MessageType type = 1;
+    uint32 version = 2;
+    uint32 length = 3;
+}
+
+message RTC_Offer{
+    string signature = 1;
+    string label = 2;
+    bytes offer = 3;
+}
+
+message RTC_Answer{
+    string signature = 1;
+    string label = 2;
+    bytes answer = 3;
+}
+
+message RTC_Sync{
+    string signature = 1;
+    string label = 2;
+}
+
+message CandidateOffer{
+    string signature = 1;
+    string candidate = 2;
+}
+
+message CandidateAnswer{
+}
+
+message ArpRequest {
+    string signature = 1;
+}
+
+message ArpResponse{
+    string signature = 1;
+}
+
+message ArpUpdate {
+    string dst = 1;
+    string next_hop = 2;
+}
+
+message StreamRequest {
+    string ip = 1;
+    string uid = 2;
+    string prefered_region = 3;
+    bytes public_key = 4;
+}
+
+message StreamResponse {
+    string signature=1;
+    bytes cipher = 2;
+    bytes encrypted_stream_id =3;
+}
+
+message StreamUpdate {
+    string stream_id = 2;
+}
+
+message Data {
+    string dst = 1;
+    string stream_id = 2;
+    bytes encrypted_data = 3;
+}
+
+message CmdResponse{
+    string response = 1;
+}
+
+message CmdLocalNetwork {
+    string subnet = 1;
+    string user_id = 2;
+}
+
+message IpcStart {
+    string api_base_url = 1;
+    string anchor_token = 2;
+    string anchor_name = 3;
+    string domain_name = 4;
+    string region = 5;
+    bool public=6;
+}
+
+message IpcStop {
+}
+
+message IpcResponse {
+    string response = 1;
+}
