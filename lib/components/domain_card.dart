@@ -5,6 +5,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
 import '../components/toast.dart';
+import '../providers/api_provider.dart';
 import '../providers/veilnet_provider.dart';
 import '../providers/domain_provider.dart';
 import '../providers/portal_provider.dart';
@@ -47,26 +48,17 @@ class DomainCard extends HookConsumerWidget {
     Future<void> connect() async {
       try {
         isBusy.value = true;
-        final apiBaseUrl = 'https://guardian.veilnet.org';
-        final anchorName = Uuid().v4();
-
-        final dio = Dio();
-        final response = await dio.get(
-          '$apiBaseUrl/auth/token',
-          options: Options(
-            headers: {
-              'Authorization': 'Bearer ${user.session?.accessToken}',
-              'accept': 'application/json',
-            },
-          ),
+        final api = ref.read(apiProvider);
+        final response = await api.get(
+          '/auth/token',
         );
         final anchorToken = response.data['access_token'];
-        dio.close();
+
 
         await veilnetNotifier.connect(
-          apiBaseUrl,
+          api.options.baseUrl,
           anchorToken,
-          anchorName,
+          Uuid().v4(),
           domain.name,
           domain.region,
           public,
