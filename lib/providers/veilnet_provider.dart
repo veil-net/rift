@@ -140,12 +140,48 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
   }
 
   Future<void> _loadState() async {
-    // Load the saved state from the shared preferences
-    final prefs = await SharedPreferences.getInstance();
-    final savedState = prefs.getString('veilnet_state');
+    try {
+      // Load the saved state from the shared preferences
+      final prefs = await SharedPreferences.getInstance();
+      final savedState = prefs.getString('veilnet_state');
 
-    // If there is no saved state, set the state to the default values
-    if (savedState == null) {
+      // If there is no saved state, set the state to the default values
+      if (savedState == null) {
+        state = state.copyWith(
+          isConnected: false,
+          anchorName: null,
+          domain: null,
+          region: null,
+          public: null,
+        );
+        return;
+      }
+
+      // If there is a saved state, set the state to the saved values
+      final savedStateJson = json.decode(savedState);
+      state = state.copyWith(
+        anchorName: savedStateJson['anchorName'],
+        domain: savedStateJson['domain'],
+        region: savedStateJson['region'],
+        public: savedStateJson['public'],
+      );
+
+      // If the rift session exists, set the state to connected
+      final riftSessionExists = await _fetchRiftSession();
+      if (riftSessionExists) {
+        state = state.copyWith(isConnected: true);
+        return;
+      } else {
+        // If the rift session does not exist, set the state to disconnected
+        state = state.copyWith(
+          isConnected: false,
+          anchorName: null,
+          domain: null,
+          region: null,
+          public: null,
+        );
+      }
+    } catch (e) {
       state = state.copyWith(
         isConnected: false,
         anchorName: null,
@@ -153,31 +189,8 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
         region: null,
         public: null,
       );
-      return;
-    }
-
-    // If there is a saved state, set the state to the saved values
-    final savedStateJson = json.decode(savedState);
-    state = state.copyWith(
-      anchorName: savedStateJson['anchorName'],
-      domain: savedStateJson['domain'],
-      region: savedStateJson['region'],
-      public: savedStateJson['public'],
-    );
-
-    // If the rift session exists, set the state to connected
-    if (await _fetchRiftSession()) {
-      state = state.copyWith(isConnected: true);
-      return;
-    } else {
-      // If the rift session does not exist, set the state to disconnected
-      state = state.copyWith(
-        isConnected: false,
-        anchorName: null,
-        domain: null,
-        region: null,
-        public: null,
-      );
+    } finally {
+      await _saveState();
     }
   }
 
