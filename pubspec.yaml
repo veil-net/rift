@@ -58,6 +58,7 @@ dev_dependencies:
   flutter_lints: ^5.0.0
   custom_lint: ^0.7.5
   riverpod_lint: ^2.6.5
+  msix: ^3.16.9
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
@@ -100,3 +101,11 @@ flutter:
   #
   # For details regarding fonts from package dependencies,
   # see https://flutter.dev/to/font-from-package
+
+msix_config:
+  display_name: VeilNet Rift
+  msix_version: 1.0.0.0
+  logo_path: assets/images/icon.png
+  identity_name: com.veilnet.rift
+  publisher_display_name: VeilNet
+  capabilities: "runFullTrust"
