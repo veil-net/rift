@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import '../components/toast.dart';
 
 import '../main.dart';
 import '../providers/user_provider.dart';
+import 'dialog.dart';
 
 class CustomDrawer extends HookConsumerWidget {
   const CustomDrawer({super.key});
@@ -75,11 +75,11 @@ class CustomDrawer extends HookConsumerWidget {
                 await supabase.auth.signOut();
               } on AuthException catch (e) {
                 if (context.mounted) {
-                  ToastManager.showError(context, e.message);
+                  DialogManager.showDialog(context, e.message, DialogType.error);
                 }
               } catch (e) {
                 if (context.mounted) {
-                  ToastManager.showError(context, e.toString());
+                  DialogManager.showDialog(context, e.toString(), DialogType.error);
                 }
               }
             },

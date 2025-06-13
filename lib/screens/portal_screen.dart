@@ -11,9 +11,7 @@ class PortalScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final portals = ref.watch(
-      isPublic ? publicPortalProvider : privatePortalProvider,
-    );
+    final portals = ref.watch(portalProvider(isPublic));
 
     return AuthGuard(
       child: Scaffold(

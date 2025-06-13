@@ -5,12 +5,16 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../main.dart';
 import 'glass_card.dart';
-import 'toast.dart';
+import 'dialog.dart';
 
 class SignUpForm extends HookConsumerWidget {
   final PageController pageController;
   final TextEditingController emailController;
-  const SignUpForm({super.key, required this.pageController, required this.emailController});
+  const SignUpForm({
+    super.key,
+    required this.pageController,
+    required this.emailController,
+  });
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,9 +27,10 @@ class SignUpForm extends HookConsumerWidget {
 
     Future<void> register() async {
       if (!termsAccepted.value) {
-        ToastManager.showError(
+        DialogManager.showDialog(
           context,
           'Please accept the terms and conditions',
+          DialogType.error,
         );
         return;
       }
@@ -39,19 +44,24 @@ class SignUpForm extends HookConsumerWidget {
             password: passwordController.text,
           );
           if (context.mounted) {
-            ToastManager.showSuccess(
+            DialogManager.showDialog(
               context,
               'Registration successful! Please check your email for verification.',
+              DialogType.success,
             );
-            pageController.animateToPage(2, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+            pageController.animateToPage(
+              2,
+              duration: const Duration(milliseconds: 300),
+              curve: Curves.easeInOut,
+            );
           }
         } on AuthException catch (e) {
           if (context.mounted) {
-            ToastManager.showError(context, e.message);
+            DialogManager.showDialog(context, e.message, DialogType.error);
           }
         } catch (e) {
           if (context.mounted) {
-            ToastManager.showError(context, e.toString());
+            DialogManager.showDialog(context, e.toString(), DialogType.error);
           }
         } finally {
           isBusy.value = false;
@@ -147,7 +157,11 @@ class SignUpForm extends HookConsumerWidget {
                 const SizedBox(height: 16),
                 TextButton(
                   onPressed: () {
-                    pageController.animateToPage(0, duration: const Duration(milliseconds: 300), curve: Curves.easeInOut);
+                    pageController.animateToPage(
+                      0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeInOut,
+                    );
                   },
                   child: const Text('Already have an account? Login'),
                 ),

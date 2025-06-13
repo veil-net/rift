@@ -6,7 +6,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../main.dart';
 import '../screens/home_screen.dart';
 import 'glass_card.dart';
-import 'toast.dart';
+import 'dialog.dart';
 
 class EmailVerificationForm extends HookConsumerWidget {
   final PageController pageController;
@@ -32,7 +32,7 @@ class EmailVerificationForm extends HookConsumerWidget {
           type: OtpType.signup,
         );
         if (context.mounted) {
-          ToastManager.showSuccess(context, 'Email verified successfully');
+          DialogManager.showDialog(context, 'Email verified successfully', DialogType.success);
           Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -40,11 +40,11 @@ class EmailVerificationForm extends HookConsumerWidget {
         }
       } on AuthException catch (e) {
         if (context.mounted) {
-          ToastManager.showError(context, e.message);
+          DialogManager.showDialog(context, e.message, DialogType.error);
         }
       } catch (e) {
         if (context.mounted) {
-          ToastManager.showError(context, e.toString());
+          DialogManager.showDialog(context, e.toString(), DialogType.error);
         }
       } finally {
         isBusy.value = false;
@@ -60,11 +60,11 @@ class EmailVerificationForm extends HookConsumerWidget {
         );
       } on AuthException catch (e) {
         if (context.mounted) {
-          ToastManager.showError(context, e.message);
+          DialogManager.showDialog(context, e.message, DialogType.error);
         }
       } catch (e) {
         if (context.mounted) {
-          ToastManager.showError(context, e.toString());
+          DialogManager.showDialog(context, e.toString(), DialogType.error);
         }
       } finally {
         isBusy.value = false;

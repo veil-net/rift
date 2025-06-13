@@ -8,7 +8,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/user_provider.dart';
 import '../screens/daemon_screen.dart';
-import 'toast.dart';
+import 'dialog.dart';
 
 class CustomAppBar extends HookConsumerWidget {
   const CustomAppBar({super.key});
@@ -22,14 +22,32 @@ class CustomAppBar extends HookConsumerWidget {
         await supabase.auth.signOut();
       } on AuthException catch (e) {
         if (context.mounted) {
-          ToastManager.showError(context, e.message);
+          DialogManager.showDialog(context, e.message, DialogType.error);
         }
       } catch (e) {
         if (context.mounted) {
-          ToastManager.showError(context, e.toString());
+          DialogManager.showDialog(context, e.toString(), DialogType.error);
         }
       }
     }
+
+    Future<void> refreshSubscriptionTier(
+      BuildContext context,
+      WidgetRef ref,
+    ) async {
+      if (context.mounted) {
+        ref.invalidate(userServiceTierProvider);
+        if (context.mounted) {
+          DialogManager.showDialog(
+            context,
+            'Subscription tier refreshed',
+            DialogType.success,
+          );
+        }
+      }
+    }
+
+    ;
 
     return ClipRRect(
       child: BackdropFilter(
@@ -50,9 +68,10 @@ class CustomAppBar extends HookConsumerWidget {
                   onPressed: () {
                     ref.invalidate(userServiceTierProvider);
                     if (context.mounted) {
-                      ToastManager.showSuccess(
+                      DialogManager.showDialog(
                         context,
                         'Subscription tier refreshed',
+                        DialogType.success,
                       );
                     }
                   },
@@ -63,21 +82,7 @@ class CustomAppBar extends HookConsumerWidget {
                   labelStyle: TextStyle(
                     color: Theme.of(context).colorScheme.secondary,
                   ),
-                  onPressed: () {
-                    if (context.mounted) {
-                      ToastManager.showInfo(
-                        context,
-                        'Refreshing subscription tier...',
-                      );
-                    }
-                    ref.invalidate(userServiceTierProvider);
-                    if (context.mounted) {
-                      ToastManager.showSuccess(
-                        context,
-                        'Subscription tier refreshed',
-                      );
-                    }
-                  },
+                  onPressed: () => refreshSubscriptionTier(context, ref),
                 ),
               if (userServiceTier.value == 2)
                 ActionChip(
@@ -85,21 +90,7 @@ class CustomAppBar extends HookConsumerWidget {
                   labelStyle: TextStyle(
                     color: Theme.of(context).colorScheme.secondary,
                   ),
-                  onPressed: () {
-                    if (context.mounted) {
-                      ToastManager.showInfo(
-                        context,
-                        'Refreshing subscription tier...',
-                      );
-                    }
-                    ref.invalidate(userServiceTierProvider);
-                    if (context.mounted) {
-                      ToastManager.showSuccess(
-                        context,
-                        'Subscription tier refreshed',
-                      );
-                    }
-                  },
+                  onPressed: () => refreshSubscriptionTier(context, ref),
                 ),
               if (userServiceTier.value == 3)
                 ActionChip(
@@ -107,21 +98,7 @@ class CustomAppBar extends HookConsumerWidget {
                   labelStyle: TextStyle(
                     color: Theme.of(context).colorScheme.secondary,
                   ),
-                  onPressed: () {
-                    if (context.mounted) {
-                      ToastManager.showInfo(
-                        context,
-                        'Refreshing subscription tier...',
-                      );
-                    }
-                    ref.invalidate(userServiceTierProvider);
-                    if (context.mounted) {
-                      ToastManager.showSuccess(
-                        context,
-                        'Subscription tier refreshed',
-                      );
-                    }
-                  },
+                  onPressed: () => refreshSubscriptionTier(context, ref),
                 ),
               const SizedBox(width: 16),
             ],

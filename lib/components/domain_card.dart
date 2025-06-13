@@ -3,7 +3,7 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../components/toast.dart';
+import 'dialog.dart';
 import '../providers/api_provider.dart';
 import '../providers/domain_provider.dart';
 import '../providers/portal_provider.dart';
@@ -22,15 +22,9 @@ class DomainCard extends HookConsumerWidget {
     final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
     final isBusy = useState(false);
 
-    final rifts =
-        public
-            ? ref.watch(publicRiftByDomainProvider(domain.id))
-            : ref.watch(privateRiftByDomainProvider(domain.id));
+    final rifts = ref.watch(riftProvider(public));
 
-    final portalVsSessions =
-        public
-            ? ref.watch(publicPortalVsSessionsByDomainProvider(domain.id))
-            : ref.watch(privatePortalVsSessionsByDomainProvider(domain.id));
+    final portals = ref.watch(portalProvider(public));
 
     String countryCodeToFlagEmoji(String countryCode) {
       if (countryCode.length != 2) return '';
@@ -46,11 +40,8 @@ class DomainCard extends HookConsumerWidget {
       try {
         isBusy.value = true;
         final api = ref.read(apiProvider);
-        final response = await api.get(
-          '/auth/token',
-        );
+        final response = await api.get('/auth/token');
         final anchorToken = response.data['access_token'];
-
 
         await veilnetNotifier.connect(
           api.options.baseUrl,
@@ -61,16 +52,24 @@ class DomainCard extends HookConsumerWidget {
           public,
         );
         if (context.mounted) {
-          ToastManager.showSuccess(context, 'Connected to domain');
+          DialogManager.showDialog(
+            context,
+            'Connected to domain',
+            DialogType.success,
+          );
         }
       } catch (e) {
         if (context.mounted) {
-          ToastManager.showError(context, 'Failed to connect to domain: $e');
+          DialogManager.showDialog(
+            context,
+            'Failed to connect to domain: $e',
+            DialogType.error,
+          );
         }
       } finally {
         isBusy.value = false;
-        ref.invalidate(publicRiftProvider);
-        ref.invalidate(privateRiftProvider);
+        ref.invalidate(riftProvider(public));
+        ref.invalidate(portalProvider(public));
       }
     }
 
@@ -107,9 +106,10 @@ class DomainCard extends HookConsumerWidget {
                               await connect();
                             } catch (e) {
                               if (context.mounted) {
-                                ToastManager.showError(
+                                DialogManager.showDialog(
                                   context,
                                   'Failed to connect to domain: $e',
+                                  DialogType.error,
                                 );
                               }
                             }
@@ -142,10 +142,10 @@ class DomainCard extends HookConsumerWidget {
                           Icons.cyclone,
                           color: Theme.of(context).colorScheme.secondary,
                         ),
-                        title: portalVsSessions.when(
+                        title: portals.when(
                           data:
                               (data) => Text(
-                                '${data[1]}/${data[0]}',
+                                '${data.where((portal) => portal.domain_id == domain.id && portal.online).length}/${data.where((portal) => portal.domain_id == domain.id).length}',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.titleMedium?.copyWith(
@@ -193,7 +193,7 @@ class DomainCard extends HookConsumerWidget {
                         title: rifts.when(
                           data:
                               (data) => Text(
-                                data.length.toString(),
+                                '${data.where((rift) => rift.domain_id == domain.id && rift.online).length}/${data.where((rift) => rift.domain_id == domain.id).length}',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.titleMedium?.copyWith(

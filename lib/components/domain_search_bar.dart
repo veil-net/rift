@@ -18,7 +18,7 @@ class DomainSearchBar extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      padding: const EdgeInsets.all(8.0),
       child: Row(
         children: [
           Expanded(
@@ -26,7 +26,9 @@ class DomainSearchBar extends HookConsumerWidget {
               decoration: InputDecoration(
                 prefixIcon: const Icon(Icons.search),
                 hintText: 'Search domains...',
-                border: OutlineInputBorder(),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surface.withAlpha(100),
               ),
@@ -36,14 +38,12 @@ class DomainSearchBar extends HookConsumerWidget {
           const SizedBox(width: 16),
           IconButton(
             onPressed: () {
-              ref.invalidate(publicDomainProvider);
-              ref.invalidate(privateDomainProvider);
-              ref.invalidate(publicPortalProvider);
-              ref.invalidate(privatePortalProvider);
-              ref.invalidate(publicPortalSessionsProvider);
-              ref.invalidate(privatePortalSessionsProvider);
-              ref.invalidate(publicRiftProvider);
-              ref.invalidate(privateRiftProvider);
+              ref.invalidate(domainProvider(true));
+              ref.invalidate(domainProvider(false));
+              ref.invalidate(portalProvider(true));
+              ref.invalidate(portalProvider(false));
+              ref.invalidate(riftProvider(true));
+              ref.invalidate(riftProvider(false));
             },
             icon: const Icon(Icons.refresh),
           ),

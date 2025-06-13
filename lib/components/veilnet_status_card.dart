@@ -9,7 +9,7 @@ import '../providers/veilnet_provider.dart';
 import '../providers/portal_provider.dart';
 import '../screens/portal_screen.dart';
 import '../providers/user_provider.dart';
-import 'toast.dart';
+import 'dialog.dart';
 
 class DaemonStatusCard extends HookConsumerWidget {
   const DaemonStatusCard({super.key});
@@ -19,9 +19,8 @@ class DaemonStatusCard extends HookConsumerWidget {
     final veilnet = ref.watch(veilnetNotifierProvider);
     final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
     final userProfile = ref.watch(userProfileProvider);
-
-    final publicPortalVsSessions = ref.watch(publicPortalVsSessionsProvider);
-    final privatePortalVsSessions = ref.watch(privatePortalVsSessionsProvider);
+    final publicPortals = ref.watch(portalProvider(true));
+    final privatePortals = ref.watch(portalProvider(false));
 
     useEffect(() {
       final timer = Timer.periodic(const Duration(seconds: 10), (timer) {
@@ -67,9 +66,10 @@ class DaemonStatusCard extends HookConsumerWidget {
                     IconButton(
                       icon: const Icon(Icons.help),
                       onPressed: () {
-                        ToastManager.showInfo(
+                        DialogManager.showDialog(
                           context,
                           'The MP (Minutes of Participation) system enables users to access VeilNet services without a subscription. Users can earn MP by self-hosting VeilNet Portals under public domains, with each Portal generating 1 MP per second. These MP are then consumed by the user’s Public Rifts at the same rate. This system incentivizes community hosting and rewards users with continued access to the network in a decentralized, contribution-based model.',
+                          DialogType.info,
                         );
                       },
                     ),
@@ -93,10 +93,10 @@ class DaemonStatusCard extends HookConsumerWidget {
                           Icons.cyclone,
                           color: Theme.of(context).colorScheme.secondary,
                         ),
-                        title: publicPortalVsSessions.when(
+                        title: publicPortals.when(
                           data:
                               (data) => Text(
-                                '${data[1]}/${data[0]}',
+                                '${data.where((portal) => portal.online).length}/${data.length}',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.titleMedium?.copyWith(
@@ -123,7 +123,7 @@ class DaemonStatusCard extends HookConsumerWidget {
                               ),
                         ),
                         subtitle: Text(
-                          'Public Portals',
+                          'Public',
                           style: Theme.of(
                             context,
                           ).textTheme.titleSmall?.copyWith(
@@ -147,13 +147,13 @@ class DaemonStatusCard extends HookConsumerWidget {
                     child: GlassCard(
                       child: ListTile(
                         leading: Icon(
-                          Icons.electric_bolt,
+                          Icons.cyclone,
                           color: Theme.of(context).colorScheme.secondary,
                         ),
-                        title: privatePortalVsSessions.when(
+                        title: privatePortals.when(
                           data:
                               (data) => Text(
-                                '${data[0]}/${data[1]}',
+                                '${data.where((portal) => portal.online).length}/${data.length}',
                                 style: Theme.of(
                                   context,
                                 ).textTheme.titleMedium?.copyWith(
@@ -180,7 +180,7 @@ class DaemonStatusCard extends HookConsumerWidget {
                               ),
                         ),
                         subtitle: Text(
-                          'Private Portals',
+                          'Private',
                           style: Theme.of(
                             context,
                           ).textTheme.titleSmall?.copyWith(
@@ -228,14 +228,15 @@ class DaemonStatusCard extends HookConsumerWidget {
                               await veilnetNotifier.disconnect();
                             } catch (e) {
                               if (context.mounted) {
-                                ToastManager.showError(
+                                DialogManager.showDialog(
                                   context,
                                   'Failed to disconnect from domain: $e',
+                                  DialogType.error,
                                 );
                               }
                             } finally {
-                              ref.invalidate(publicRiftProvider);
-                              ref.invalidate(privateRiftProvider);
+                              ref.invalidate(riftProvider(true));
+                              ref.invalidate(riftProvider(false));
                             }
                           },
                           icon: const Icon(

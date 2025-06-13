@@ -1,245 +1,197 @@
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+// ignore_for_file: public_member_api_docs, sort_constructors_first
+import 'dart:convert';
+import 'dart:developer';
 
-import '../main.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:rift/main.dart';
 
 class Portal {
   final String id;
-  final DateTime createdAt;
-  final String userId;
-  final String domainId;
+  final String user_id;
+  final String domain_id;
   final String name;
   final String? tag;
-
+  final String domain;
+  final String region;
+  final String subnet;
+  final String? cidr;
+  final String? signature;
+  final DateTime? updated_at;
+  final bool online;
   Portal({
     required this.id,
-    required this.createdAt,
-    required this.userId,
-    required this.domainId,
+    required this.user_id,
+    required this.domain_id,
     required this.name,
     this.tag,
+    required this.domain,
+    required this.region,
+    required this.subnet,
+    this.cidr,
+    this.signature,
+    this.updated_at,
+    required this.online,
   });
 
-  factory Portal.fromJson(Map<String, dynamic> json) {
+  Portal copyWith({
+    String? id,
+    String? user_id,
+    String? domain_id,
+    String? veil_id,
+    String? name,
+    String? tag,
+    String? domain,
+    String? region,
+    String? subnet,
+    String? cidr,
+    String? signature,
+    DateTime? updated_at,
+    bool? online,
+  }) {
     return Portal(
-      id: json['id'],
-      createdAt: DateTime.parse(json['created_at']),
-      userId: json['user_id'],
-      domainId: json['domain_id'],
-      name: json['name'],
-      tag: json['tag'],
+      id: id ?? this.id,
+      user_id: user_id ?? this.user_id,
+      domain_id: domain_id ?? this.domain_id,
+      name: name ?? this.name,
+      tag: tag ?? this.tag,
+      domain: domain ?? this.domain,
+      region: region ?? this.region,
+      subnet: subnet ?? this.subnet,
+      cidr: cidr ?? this.cidr,
+      signature: signature ?? this.signature,
+      updated_at: updated_at ?? this.updated_at,
+      online: online ?? this.online,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
       'id': id,
-      'created_at': createdAt.toIso8601String(),
-      'user_id': userId,
-      'domain_id': domainId,
+      'user_id': user_id,
+      'domain_id': domain_id,
       'name': name,
       'tag': tag,
+      'domain': domain,
+      'region': region,
+      'subnet': subnet,
+      'cidr': cidr,
+      'signature': signature,
+      'updated_at': updated_at?.toUtc().toIso8601String(),
+      'online': online,
     };
   }
-}
 
-final publicPortalProvider = FutureProvider<List<Portal>>((ref) async {
-  final response = await supabase.from('public_portals').select('*');
-  return response.map((json) => Portal.fromJson(json)).toList();
-});
-
-final publicPortalCountProvider = FutureProvider<int>((ref) async {
-  final portals = await ref.watch(publicPortalProvider.future);
-  return portals.length;
-});
-
-final publicPortalByDomainProvider =
-    FutureProvider.family<List<Portal>, String>((ref, domainId) async {
-      final publicPortals = await ref.watch(publicPortalProvider.future);
-      return publicPortals
-          .where((portal) => portal.domainId == domainId)
-          .toList();
-    });
-
-final publicPortalCountByDomainProvider = FutureProvider.family<int, String>((
-  ref,
-  domainId,
-) async {
-  final publicPortals = await ref.watch(
-    publicPortalByDomainProvider(domainId).future,
-  );
-  return publicPortals.length;
-});
-
-final privatePortalProvider = FutureProvider<List<Portal>>((ref) async {
-  final response = await supabase.from('private_portals').select('*');
-  return response.map((json) => Portal.fromJson(json)).toList();
-});
-
-final privatePortalCountProvider = FutureProvider<int>((ref) async {
-  final portals = await ref.watch(privatePortalProvider.future);
-  return portals.length;
-});
-
-final privatePortalByDomainProvider =
-    FutureProvider.family<List<Portal>, String>((ref, domainId) async {
-      final privatePortals = await ref.watch(privatePortalProvider.future);
-      return privatePortals
-          .where((portal) => portal.domainId == domainId)
-          .toList();
-    });
-
-final privatePortalCountByDomainProvider = FutureProvider.family<int, String>((
-  ref,
-  domainId,
-) async {
-  final privatePortals = await ref.watch(
-    privatePortalByDomainProvider(domainId).future,
-  );
-  return privatePortals.length;
-});
-
-class PortalSession {
-  final String id;
-  final DateTime updatedAt;
-  final String userId;
-  final String veilId;
-  final String domainId;
-  final String cidr;
-  final String signature;
-
-  PortalSession({
-    required this.id,
-    required this.updatedAt,
-    required this.userId,
-    required this.veilId,
-    required this.domainId,
-    required this.cidr,
-    required this.signature,
-  });
-
-  factory PortalSession.fromJson(Map<String, dynamic> json) {
-    return PortalSession(
-      id: json['id'],
-      updatedAt: DateTime.parse(json['updated_at']),
-      userId: json['user_id'],
-      veilId: json['veil_id'],
-      domainId: json['domain_id'],
-      cidr: json['cidr'],
-      signature: json['signature'],
+  factory Portal.fromMap(Map<String, dynamic> map) {
+    return Portal(
+      id: map['id'] as String,
+      user_id: map['user_id'] as String,
+      domain_id: map['domain_id'] as String,
+      name: map['name'] as String,
+      tag: map['tag'] != null ? map['tag'] as String : null,
+      domain: map['domain'] as String,
+      region: map['region'] as String,
+      subnet: map['subnet'] as String,
+      cidr: map['cidr'] != null ? map['cidr'] as String : null,
+      signature: map['signature'] != null ? map['signature'] as String : null,
+      updated_at:
+          map['updated_at'] != null
+              ? DateTime.parse(map['updated_at'] as String)
+              : null,
+      online: map['online'] as bool,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'id': id,
-      'updated_at': updatedAt.toIso8601String(),
-      'user_id': userId,
-      'veil_id': veilId,
-      'domain_id': domainId,
-      'cidr': cidr,
-      'signature': signature,
-    };
+  String toJson() => json.encode(toMap());
+
+  factory Portal.fromJson(String source) =>
+      Portal.fromMap(json.decode(source) as Map<String, dynamic>);
+
+  @override
+  String toString() {
+    return 'Portal(id: $id, user_id: $user_id, domain_id: $domain_id, name: $name, tag: $tag, domain: $domain, region: $region, subnet: $subnet, cidr: $cidr, signature: $signature, updated_at: $updated_at, online: $online)';
+  }
+
+  @override
+  bool operator ==(covariant Portal other) {
+    if (identical(this, other)) return true;
+
+    return other.id == id &&
+        other.user_id == user_id &&
+        other.domain_id == domain_id &&
+        other.name == name &&
+        other.tag == tag &&
+        other.domain == domain &&
+        other.region == region &&
+        other.subnet == subnet &&
+        other.cidr == cidr &&
+        other.signature == signature &&
+        other.updated_at == updated_at &&
+        other.online == online;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+        user_id.hashCode ^
+        domain_id.hashCode ^
+        name.hashCode ^
+        tag.hashCode ^
+        domain.hashCode ^
+        region.hashCode ^
+        subnet.hashCode ^
+        cidr.hashCode ^
+        signature.hashCode ^
+        updated_at.hashCode ^
+        online.hashCode;
   }
 }
 
-final publicPortalSessionsProvider = FutureProvider<List<PortalSession>>((
+final portalProvider = FutureProvider.family<List<Portal>, bool>((
   ref,
+  public,
 ) async {
-  final response = await supabase.from('public_portal_sessions').select('*');
-  return response.map((json) => PortalSession.fromJson(json)).toList();
+  try {
+    final portalDetails =
+        public
+            ? await supabase.from('public_portal_details').select('*')
+            : await supabase.from('private_portal_details').select('*');
+    log('Fetched ${portalDetails.length} portal details');
+
+    final portalSessions =
+        public
+            ? await supabase.from('public_portal_sessions').select('*')
+            : await supabase.from('private_portal_sessions').select('*');
+    log('Fetched ${portalSessions.length} portal sessions');
+
+    return portalDetails.map((portalDetails) {
+      final portalSession = portalSessions.firstWhere(
+        (session) => session['id'] == portalDetails['id'],
+        orElse: () => {},
+      );
+      final portal = Portal(
+        id: portalDetails['id'],
+        user_id: portalDetails['user_id'],
+        domain_id: portalDetails['domain_id'],
+        name: portalDetails['name'],
+        tag: portalDetails['tag'],
+        domain: portalDetails['domain'],
+        region: portalDetails['region'],
+        subnet: portalDetails['subnet'],
+        online: false,
+      );
+      if (portalSession.isEmpty) {
+        return portal;
+      }
+      return portal.copyWith(
+        online: true,
+        cidr: portalSession['cidr'],
+        signature: portalSession['signature'],
+        updated_at: DateTime.parse(portalSession['updated_at']),
+      );
+    }).toList();
+  } catch (e, stackTrace) {
+    log('Failed to fetch portal data', stackTrace: stackTrace, error: e);
+    return [];
+  }
 });
 
-final publicPortalSessionsByIdProvider =
-    FutureProvider.family<PortalSession, String>((ref, id) async {
-      final sessions = await ref.watch(publicPortalSessionsProvider.future);
-      return sessions.firstWhere((session) => session.id == id);
-    });
-
-final publicPortalSessionsCountProvider = FutureProvider<int>((ref) async {
-  final sessions = await ref.watch(publicPortalSessionsProvider.future);
-  return sessions.length;
-});
-
-final publicPortalSessionsByDomainProvider =
-    FutureProvider.family<List<PortalSession>, String>((ref, domainId) async {
-      final sessions = await ref.watch(publicPortalSessionsProvider.future);
-      return sessions.where((session) => session.domainId == domainId).toList();
-    });
-
-final publicPortalSessionsCountByDomainProvider =
-    FutureProvider.family<int, String>((ref, domainId) async {
-      final sessions = await ref.watch(
-        publicPortalSessionsByDomainProvider(domainId).future,
-      );
-      return sessions.length;
-    });
-
-final privatePortalSessionsProvider = FutureProvider<List<PortalSession>>((
-  ref,
-) async {
-  final response = await supabase.from('private_portal_sessions').select('*');
-  return response.map((json) => PortalSession.fromJson(json)).toList();
-});
-
-final privatePortalSessionsByIdProvider =
-    FutureProvider.family<PortalSession, String>((ref, id) async {
-      final sessions = await ref.watch(privatePortalSessionsProvider.future);
-      return sessions.firstWhere((session) => session.id == id);
-    });
-
-final privatePortalSessionsCountProvider = FutureProvider<int>((ref) async {
-  final sessions = await ref.watch(privatePortalSessionsProvider.future);
-  return sessions.length;
-});
-
-final privatePortalSessionsByDomainProvider =
-    FutureProvider.family<List<PortalSession>, String>((ref, domainId) async {
-      final sessions = await ref.watch(privatePortalSessionsProvider.future);
-      return sessions.where((session) => session.domainId == domainId).toList();
-    });
-
-final privatePortalSessionsCountByDomainProvider =
-    FutureProvider.family<int, String>((ref, domainId) async {
-      final sessions = await ref.watch(
-        privatePortalSessionsByDomainProvider(domainId).future,
-      );
-      return sessions.length;
-    });
-
-final publicPortalVsSessionsProvider = FutureProvider<List<int>>((ref) async {
-  final publicPortalCount = await ref.watch(publicPortalCountProvider.future);
-  final publicPortalSessionsCount = await ref.watch(
-    publicPortalSessionsCountProvider.future,
-  );
-  return [publicPortalCount, publicPortalSessionsCount];
-});
-
-final publicPortalVsSessionsByDomainProvider =
-    FutureProvider.family<List<int>, String>((ref, domainId) async {
-      final publicPortalCount = await ref.watch(
-        publicPortalCountByDomainProvider(domainId).future,
-      );
-      final publicPortalSessionsCount = await ref.watch(
-        publicPortalSessionsCountByDomainProvider(domainId).future,
-      );
-      return [publicPortalCount, publicPortalSessionsCount];
-    });
-
-final privatePortalVsSessionsProvider = FutureProvider<List<int>>((ref) async {
-  final privatePortalCount = await ref.watch(privatePortalCountProvider.future);
-  final privatePortalSessionsCount = await ref.watch(
-    privatePortalSessionsCountProvider.future,
-  );
-  return [privatePortalCount, privatePortalSessionsCount];
-});
-
-final privatePortalVsSessionsByDomainProvider =
-    FutureProvider.family<List<int>, String>((ref, domainId) async {
-      final privatePortalCount = await ref.watch(
-        privatePortalCountByDomainProvider(domainId).future,
-      );
-      final privatePortalSessionsCount = await ref.watch(
-        privatePortalSessionsCountByDomainProvider(domainId).future,
-      );
-      return [privatePortalCount, privatePortalSessionsCount];
-    });

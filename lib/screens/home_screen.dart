@@ -4,6 +4,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 
 import '../components/auth_guard.dart';
 import '../components/custom_appbar.dart';
+import '../components/glass_card.dart';
 import '../components/veilnet_status_card.dart';
 import '../components/domain_card.dart';
 import '../components/domain_region_filter.dart';
@@ -16,8 +17,8 @@ class HomeScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final publicDomains = ref.watch(publicDomainProvider);
-    final privateDomains = ref.watch(privateDomainProvider);
+    final publicDomains = ref.watch(domainProvider(true));
+    final privateDomains = ref.watch(domainProvider(false));
     final pageController = usePageController();
     final selectedSegment = useState(0);
     final searchController = useTextEditingController();
@@ -27,10 +28,10 @@ class HomeScreen extends HookConsumerWidget {
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (ModalRoute.of(context)?.isCurrent ?? false) {
-          ref.invalidate(publicDomainProvider);
-          ref.invalidate(privateDomainProvider);
-          ref.invalidate(publicPortalProvider);
-          ref.invalidate(privatePortalProvider);
+          ref.invalidate(domainProvider(true));
+          ref.invalidate(domainProvider(false));
+          ref.invalidate(portalProvider(true));
+          ref.invalidate(portalProvider(false));
         }
       });
 
@@ -58,6 +59,7 @@ class HomeScreen extends HookConsumerWidget {
       child: SafeArea(
         child: Scaffold(
           backgroundColor: Colors.transparent,
+          resizeToAvoidBottomInset: false,
           appBar: PreferredSize(
             preferredSize: Size.fromHeight(50),
             child: const CustomAppBar(),
@@ -70,16 +72,63 @@ class HomeScreen extends HookConsumerWidget {
                   const SizedBox(height: 8),
                   DaemonStatusCard(),
                   const SizedBox(height: 8),
-                  DomainSearchBar(
-                    searchController: searchController,
-                    selectedSegment: selectedSegment,
-                  ),
-                  const SizedBox(height: 8),
-                  RegionFilter(
-                    selectedSegment: selectedSegment,
-                    publicDomains: publicDomains,
-                    privateDomains: privateDomains,
-                    selectedRegions: selectedRegions,
+                  GlassCard(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        DomainSearchBar(
+                          searchController: searchController,
+                          selectedSegment: selectedSegment,
+                        ),
+                        const SizedBox(height: 8),
+                        RegionFilter(
+                          selectedSegment: selectedSegment,
+                          publicDomains: publicDomains,
+                          privateDomains: privateDomains,
+                          selectedRegions: selectedRegions,
+                        ),
+                        const SizedBox(height: 8),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              'Public',
+                              style: TextStyle(
+                                color:
+                                    selectedSegment.value == 0
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Colors.white,
+                              ),
+                            ),
+                            Switch(
+                              value: selectedSegment.value == 1,
+                              onChanged: (bool isPrivate) {
+                                final newIndex = isPrivate ? 1 : 0;
+                                selectedSegment.value = newIndex;
+                                pageController.animateToPage(
+                                  newIndex,
+                                  duration: const Duration(milliseconds: 300),
+                                  curve: Curves.easeInOut,
+                                );
+                              },
+                              activeColor:
+                                  Theme.of(context).colorScheme.secondary,
+                              inactiveThumbColor:
+                                  Theme.of(context).colorScheme.secondary,
+                            ),
+                            Text(
+                              'Private',
+                              style: TextStyle(
+                                color:
+                                    selectedSegment.value == 1
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
                   ),
                   const SizedBox(height: 8),
                   Expanded(
@@ -108,12 +157,15 @@ class HomeScreen extends HookConsumerWidget {
                                               selectedRegions.value.contains(
                                                 domain.region.toUpperCase(),
                                               )) {
-                                            return DomainCard(
-                                              domain: data[index],
-                                              public: true,
+                                            return Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 8),
+                                              child: DomainCard(
+                                                domain: data[index],
+                                                public: true,
+                                              ),
                                             );
                                           }
-                                          return null;
+                                          return const SizedBox.shrink();
                                         },
                                       ),
                                   error:
@@ -148,12 +200,15 @@ class HomeScreen extends HookConsumerWidget {
                                               selectedRegions.value.contains(
                                                 domain.region.toUpperCase(),
                                               )) {
-                                            return DomainCard(
-                                              domain: data[index],
-                                              public: false,
+                                            return Padding(
+                                              padding: const EdgeInsets.symmetric(vertical: 8),
+                                              child: DomainCard(
+                                                domain: data[index],
+                                                public: false,
+                                              ),
                                             );
                                           }
-                                          return null;
+                                          return const SizedBox.shrink();
                                         },
                                       ),
                                   error:
@@ -174,61 +229,61 @@ class HomeScreen extends HookConsumerWidget {
               ),
             ),
           ),
-          floatingActionButtonLocation:
-              FloatingActionButtonLocation.centerDocked,
-          floatingActionButton: Container(
-            margin: const EdgeInsets.only(bottom: 16),
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface.withAlpha(100),
-              borderRadius: BorderRadius.circular(30),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                SizedBox(
-                  width: 50,
-                  child: Text(
-                    'Public',
-                    textAlign: TextAlign.right,
-                    style: TextStyle(
-                      color:
-                          selectedSegment.value == 0
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.white,
-                    ),
-                  ),
-                ),
-                Switch(
-                  value: selectedSegment.value == 1,
-                  onChanged: (bool isPrivate) {
-                    final newIndex = isPrivate ? 1 : 0;
-                    selectedSegment.value = newIndex;
-                    pageController.animateToPage(
-                      newIndex,
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                  activeColor: Theme.of(context).colorScheme.secondary,
-                  inactiveThumbColor: Theme.of(context).colorScheme.secondary,
-                ),
-                SizedBox(
-                  width: 50,
-                  child: Text(
-                    'Private',
-                    textAlign: TextAlign.left,
-                    style: TextStyle(
-                      color:
-                          selectedSegment.value == 1
-                              ? Theme.of(context).colorScheme.primary
-                              : Colors.white,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          // floatingActionButtonLocation:
+          //     FloatingActionButtonLocation.centerDocked,
+          // floatingActionButton: Container(
+          //   margin: const EdgeInsets.only(bottom: 16),
+          //   padding: const EdgeInsets.symmetric(horizontal: 16),
+          //   decoration: BoxDecoration(
+          //     color: Theme.of(context).colorScheme.surface.withAlpha(100),
+          //     borderRadius: BorderRadius.circular(30),
+          //   ),
+          //   child: Row(
+          //     mainAxisSize: MainAxisSize.min,
+          //     children: [
+          //       SizedBox(
+          //         width: 50,
+          //         child: Text(
+          //           'Public',
+          //           textAlign: TextAlign.right,
+          //           style: TextStyle(
+          //             color:
+          //                 selectedSegment.value == 0
+          //                     ? Theme.of(context).colorScheme.primary
+          //                     : Colors.white,
+          //           ),
+          //         ),
+          //       ),
+          //       Switch(
+          //         value: selectedSegment.value == 1,
+          //         onChanged: (bool isPrivate) {
+          //           final newIndex = isPrivate ? 1 : 0;
+          //           selectedSegment.value = newIndex;
+          //           pageController.animateToPage(
+          //             newIndex,
+          //             duration: const Duration(milliseconds: 300),
+          //             curve: Curves.easeInOut,
+          //           );
+          //         },
+          //         activeColor: Theme.of(context).colorScheme.secondary,
+          //         inactiveThumbColor: Theme.of(context).colorScheme.secondary,
+          //       ),
+          //       SizedBox(
+          //         width: 50,
+          //         child: Text(
+          //           'Private',
+          //           textAlign: TextAlign.left,
+          //           style: TextStyle(
+          //             color:
+          //                 selectedSegment.value == 1
+          //                     ? Theme.of(context).colorScheme.primary
+          //                     : Colors.white,
+          //           ),
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
         ),
       ),
     );

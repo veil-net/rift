@@ -18,55 +18,52 @@ class AuthScreen extends HookConsumerWidget {
 
     return MatrixRainBackground(
       child: Scaffold(
+        resizeToAvoidBottomInset: false,
         backgroundColor: Colors.transparent,
-        body: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                children: [
-                  const Spacer(),
-                  Hero(
-                    tag: 'logo',
-                    child: Image.asset('assets/images/Logo_H.png'),
-                  ),
-                  const SizedBox(height: 32),
-                  Expanded(
-                    flex: 4,
-                    child: PageView(
-                      physics: const NeverScrollableScrollPhysics(),
-                      controller: pageController,
-                      children: [
-                        LoginForm(
-                          pageController: pageController,
-                          emailController: emailController,
-                        ),
-                        SignUpForm(
-                          pageController: pageController,
-                          emailController: emailController,
-                        ),
-                        EmailVerificationForm(
-                          pageController: pageController,
-                          emailController: emailController,
-                        ),
-                        PasswordResetForm(
-                          pageController: pageController,
-                          emailController: emailController,
-                        ),
-                      ],
+        body: Stack(
+          children: [
+            Center(
+              child: LayoutBuilder(
+                builder:
+                    (context, constraints) => ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: constraints.maxHeight * 0.6,
+                        maxWidth: constraints.maxWidth * 0.9,
+                      ),
+                      child: Column(
+                        children: [
+                          Image.asset('assets/images/Logo_H.png', height: 100),
+                          const SizedBox(height: 16),
+                          Expanded(
+                            child: PageView(
+                              physics: const NeverScrollableScrollPhysics(),
+                              controller: pageController,
+                              children: [
+                                LoginForm(
+                                  pageController: pageController,
+                                  emailController: emailController,
+                                ),
+                                SignUpForm(
+                                  pageController: pageController,
+                                  emailController: emailController,
+                                ),
+                                EmailVerificationForm(
+                                  pageController: pageController,
+                                  emailController: emailController,
+                                ),
+                                PasswordResetForm(
+                                  pageController: pageController,
+                                  emailController: emailController,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    "VeilNet Rift v1.0.0 © 2025 VEILNET PTY LTD",
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Colors.white.withAlpha(128),
-                    ),
-                  ),
-                ],
               ),
             ),
-          ),
+          ],
         ),
       ),
     );
