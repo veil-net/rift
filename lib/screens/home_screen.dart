@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -64,226 +66,416 @@ class HomeScreen extends HookConsumerWidget {
             preferredSize: Size.fromHeight(50),
             child: const CustomAppBar(),
           ),
-          body: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                children: [
-                  const SizedBox(height: 8),
-                  DaemonStatusCard(),
-                  const SizedBox(height: 8),
-                  GlassCard(
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const SizedBox(height: 8),
+                          DaemonStatusCard(),
+                          const SizedBox(height: 8),
+                          GlassCard(
+                            child: Column(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                DomainSearchBar(
+                                  searchController: searchController,
+                                  selectedSegment: selectedSegment,
+                                ),
+                                const SizedBox(height: 8),
+                                RegionFilter(
+                                  selectedSegment: selectedSegment,
+                                  publicDomains: publicDomains,
+                                  privateDomains: privateDomains,
+                                  selectedRegions: selectedRegions,
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    Text(
+                                      'Public',
+                                      style: TextStyle(
+                                        color:
+                                            selectedSegment.value == 0
+                                                ? Theme.of(
+                                                  context,
+                                                ).colorScheme.primary
+                                                : Colors.white,
+                                      ),
+                                    ),
+                                    Switch(
+                                      value: selectedSegment.value == 1,
+                                      onChanged: (bool isPrivate) {
+                                        final newIndex = isPrivate ? 1 : 0;
+                                        selectedSegment.value = newIndex;
+                                        pageController.animateToPage(
+                                          newIndex,
+                                          duration: const Duration(
+                                            milliseconds: 300,
+                                          ),
+                                          curve: Curves.easeInOut,
+                                        );
+                                      },
+                                      activeColor:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.secondary,
+                                      inactiveThumbColor:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.secondary,
+                                    ),
+                                    Text(
+                                      'Private',
+                                      style: TextStyle(
+                                        color:
+                                            selectedSegment.value == 1
+                                                ? Theme.of(
+                                                  context,
+                                                ).colorScheme.primary
+                                                : Colors.white,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 32),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 400),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: PageView(
+                              controller: pageController,
+                              physics: const NeverScrollableScrollPhysics(),
+                              children: [
+                                Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    publicDomains.when(
+                                      data:
+                                          (data) => ListView.builder(
+                                            shrinkWrap: true,
+                                            itemCount: data.length,
+                                            itemBuilder: (
+                                              context,
+                                              index,
+                                            ) {
+                                              final domain = data[index];
+                                              if ((searchController
+                                                          .text
+                                                          .isEmpty ||
+                                                      data[index].name
+                                                          .toLowerCase()
+                                                          .contains(
+                                                            searchController
+                                                                .text
+                                                                .toLowerCase(),
+                                                          )) &&
+                                                  selectedRegions.value
+                                                      .contains(
+                                                        domain.region
+                                                            .toUpperCase(),
+                                                      )) {
+                                                return Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 8,
+                                                      ),
+                                                  child: DomainCard(
+                                                    domain: data[index],
+                                                    public: true,
+                                                  ),
+                                                );
+                                              }
+                                              return const SizedBox.shrink();
+                                            },
+                                          ),
+                                      error:
+                                          (error, stack) =>
+                                              Text(error.toString()),
+                                      loading:
+                                          () => const Center(
+                                            child:
+                                                CircularProgressIndicator(),
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                                Column(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.center,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    privateDomains.when(
+                                      data:
+                                          (data) => ListView.builder(
+                                            shrinkWrap: true,
+                                            itemCount: data.length,
+                                            itemBuilder: (
+                                              context,
+                                              index,
+                                            ) {
+                                              final domain = data[index];
+                                              if ((searchController
+                                                          .text
+                                                          .isEmpty ||
+                                                      data[index].name
+                                                          .toLowerCase()
+                                                          .contains(
+                                                            searchController
+                                                                .text
+                                                                .toLowerCase(),
+                                                          )) &&
+                                                  selectedRegions.value
+                                                      .contains(
+                                                        domain.region
+                                                            .toUpperCase(),
+                                                      )) {
+                                                return Padding(
+                                                  padding:
+                                                      const EdgeInsets.symmetric(
+                                                        vertical: 8,
+                                                      ),
+                                                  child: DomainCard(
+                                                    domain: data[index],
+                                                    public: false,
+                                                  ),
+                                                );
+                                              }
+                                              return const SizedBox.shrink();
+                                            },
+                                          ),
+                                      error:
+                                          (error, stack) =>
+                                              Text(error.toString()),
+                                      loading:
+                                          () => const Center(
+                                            child:
+                                                CircularProgressIndicator(),
+                                          ),
+                                    ),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                );
+              } else {
+                return Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 400),
                     child: Column(
-                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        DomainSearchBar(
-                          searchController: searchController,
-                          selectedSegment: selectedSegment,
-                        ),
                         const SizedBox(height: 8),
-                        RegionFilter(
-                          selectedSegment: selectedSegment,
-                          publicDomains: publicDomains,
-                          privateDomains: privateDomains,
-                          selectedRegions: selectedRegions,
-                        ),
+                        DaemonStatusCard(),
                         const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Text(
-                              'Public',
-                              style: TextStyle(
-                                color:
-                                    selectedSegment.value == 0
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Colors.white,
-                              ),
-                            ),
-                            Switch(
-                              value: selectedSegment.value == 1,
-                              onChanged: (bool isPrivate) {
-                                final newIndex = isPrivate ? 1 : 0;
-                                selectedSegment.value = newIndex;
-                                pageController.animateToPage(
-                                  newIndex,
-                                  duration: const Duration(milliseconds: 300),
-                                  curve: Curves.easeInOut,
-                                );
-                              },
-                              activeColor:
-                                  Theme.of(context).colorScheme.secondary,
-                              inactiveThumbColor:
-                                  Theme.of(context).colorScheme.secondary,
-                            ),
-                            Text(
-                              'Private',
-                              style: TextStyle(
-                                color:
-                                    selectedSegment.value == 1
-                                        ? Theme.of(context).colorScheme.primary
-                                        : Colors.white,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Expanded(
-                    child: PageView(
-                      controller: pageController,
-                      physics: const NeverScrollableScrollPhysics(),
-                      children: [
-                        Center(
+                        GlassCard(
                           child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              Expanded(
-                                child: publicDomains.when(
-                                  data:
-                                      (data) => ListView.builder(
-                                        itemCount: data.length,
-                                        itemBuilder: (context, index) {
-                                          final domain = data[index];
-                                          if ((searchController.text.isEmpty ||
-                                                  data[index].name
-                                                      .toLowerCase()
-                                                      .contains(
-                                                        searchController.text
-                                                            .toLowerCase(),
-                                                      )) &&
-                                              selectedRegions.value.contains(
-                                                domain.region.toUpperCase(),
-                                              )) {
-                                            return Padding(
-                                              padding: const EdgeInsets.symmetric(vertical: 8),
-                                              child: DomainCard(
-                                                domain: data[index],
-                                                public: true,
-                                              ),
-                                            );
-                                          }
-                                          return const SizedBox.shrink();
-                                        },
+                              DomainSearchBar(
+                                searchController: searchController,
+                                selectedSegment: selectedSegment,
+                              ),
+                              const SizedBox(height: 8),
+                              RegionFilter(
+                                selectedSegment: selectedSegment,
+                                publicDomains: publicDomains,
+                                privateDomains: privateDomains,
+                                selectedRegions: selectedRegions,
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Text(
+                                    'Public',
+                                    style: TextStyle(
+                                      color:
+                                          selectedSegment.value == 0
+                                              ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                              : Colors.white,
+                                    ),
+                                  ),
+                                  Switch(
+                                    value: selectedSegment.value == 1,
+                                    onChanged: (bool isPrivate) {
+                                      final newIndex = isPrivate ? 1 : 0;
+                                      selectedSegment.value = newIndex;
+                                      pageController.animateToPage(
+                                        newIndex,
+                                        duration: const Duration(
+                                          milliseconds: 300,
+                                        ),
+                                        curve: Curves.easeInOut,
+                                      );
+                                    },
+                                    activeColor:
+                                        Theme.of(context).colorScheme.secondary,
+                                    inactiveThumbColor:
+                                        Theme.of(context).colorScheme.secondary,
+                                  ),
+                                  Text(
+                                    'Private',
+                                    style: TextStyle(
+                                      color:
+                                          selectedSegment.value == 1
+                                              ? Theme.of(
+                                                context,
+                                              ).colorScheme.primary
+                                              : Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Expanded(
+                          child: PageView(
+                            controller: pageController,
+                            physics: const NeverScrollableScrollPhysics(),
+                            children: [
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: publicDomains.when(
+                                        data:
+                                            (data) => ListView.builder(
+                                              itemCount: data.length,
+                                              itemBuilder: (context, index) {
+                                                final domain = data[index];
+                                                if ((searchController
+                                                            .text
+                                                            .isEmpty ||
+                                                        data[index].name
+                                                            .toLowerCase()
+                                                            .contains(
+                                                              searchController
+                                                                  .text
+                                                                  .toLowerCase(),
+                                                            )) &&
+                                                    selectedRegions.value
+                                                        .contains(
+                                                          domain.region
+                                                              .toUpperCase(),
+                                                        )) {
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 8,
+                                                        ),
+                                                    child: DomainCard(
+                                                      domain: data[index],
+                                                      public: true,
+                                                    ),
+                                                  );
+                                                }
+                                                return const SizedBox.shrink();
+                                              },
+                                            ),
+                                        error:
+                                            (error, stack) =>
+                                                Text(error.toString()),
+                                        loading:
+                                            () => const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
                                       ),
-                                  error:
-                                      (error, stack) => Text(error.toString()),
-                                  loading:
-                                      () => const Center(
-                                        child: CircularProgressIndicator(),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Center(
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.start,
+                                  children: [
+                                    Expanded(
+                                      child: privateDomains.when(
+                                        data:
+                                            (data) => ListView.builder(
+                                              itemCount: data.length,
+                                              itemBuilder: (context, index) {
+                                                final domain = data[index];
+                                                if ((searchController
+                                                            .text
+                                                            .isEmpty ||
+                                                        data[index].name
+                                                            .toLowerCase()
+                                                            .contains(
+                                                              searchController
+                                                                  .text
+                                                                  .toLowerCase(),
+                                                            )) &&
+                                                    selectedRegions.value
+                                                        .contains(
+                                                          domain.region
+                                                              .toUpperCase(),
+                                                        )) {
+                                                  return Padding(
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          vertical: 8,
+                                                        ),
+                                                    child: DomainCard(
+                                                      domain: data[index],
+                                                      public: false,
+                                                    ),
+                                                  );
+                                                }
+                                                return const SizedBox.shrink();
+                                              },
+                                            ),
+                                        error:
+                                            (error, stack) =>
+                                                Text(error.toString()),
+                                        loading:
+                                            () => const Center(
+                                              child:
+                                                  CircularProgressIndicator(),
+                                            ),
                                       ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        Center(
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Expanded(
-                                child: privateDomains.when(
-                                  data:
-                                      (data) => ListView.builder(
-                                        itemCount: data.length,
-                                        itemBuilder: (context, index) {
-                                          final domain = data[index];
-                                          if ((searchController.text.isEmpty ||
-                                                  data[index].name
-                                                      .toLowerCase()
-                                                      .contains(
-                                                        searchController.text
-                                                            .toLowerCase(),
-                                                      )) &&
-                                              selectedRegions.value.contains(
-                                                domain.region.toUpperCase(),
-                                              )) {
-                                            return Padding(
-                                              padding: const EdgeInsets.symmetric(vertical: 8),
-                                              child: DomainCard(
-                                                domain: data[index],
-                                                public: false,
-                                              ),
-                                            );
-                                          }
-                                          return const SizedBox.shrink();
-                                        },
-                                      ),
-                                  error:
-                                      (error, stack) => Text(error.toString()),
-                                  loading:
-                                      () => const Center(
-                                        child: CircularProgressIndicator(),
-                                      ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
                       ],
                     ),
                   ),
-                ],
-              ),
-            ),
+                );
+              }
+            },
           ),
-          // floatingActionButtonLocation:
-          //     FloatingActionButtonLocation.centerDocked,
-          // floatingActionButton: Container(
-          //   margin: const EdgeInsets.only(bottom: 16),
-          //   padding: const EdgeInsets.symmetric(horizontal: 16),
-          //   decoration: BoxDecoration(
-          //     color: Theme.of(context).colorScheme.surface.withAlpha(100),
-          //     borderRadius: BorderRadius.circular(30),
-          //   ),
-          //   child: Row(
-          //     mainAxisSize: MainAxisSize.min,
-          //     children: [
-          //       SizedBox(
-          //         width: 50,
-          //         child: Text(
-          //           'Public',
-          //           textAlign: TextAlign.right,
-          //           style: TextStyle(
-          //             color:
-          //                 selectedSegment.value == 0
-          //                     ? Theme.of(context).colorScheme.primary
-          //                     : Colors.white,
-          //           ),
-          //         ),
-          //       ),
-          //       Switch(
-          //         value: selectedSegment.value == 1,
-          //         onChanged: (bool isPrivate) {
-          //           final newIndex = isPrivate ? 1 : 0;
-          //           selectedSegment.value = newIndex;
-          //           pageController.animateToPage(
-          //             newIndex,
-          //             duration: const Duration(milliseconds: 300),
-          //             curve: Curves.easeInOut,
-          //           );
-          //         },
-          //         activeColor: Theme.of(context).colorScheme.secondary,
-          //         inactiveThumbColor: Theme.of(context).colorScheme.secondary,
-          //       ),
-          //       SizedBox(
-          //         width: 50,
-          //         child: Text(
-          //           'Private',
-          //           textAlign: TextAlign.left,
-          //           style: TextStyle(
-          //             color:
-          //                 selectedSegment.value == 1
-          //                     ? Theme.of(context).colorScheme.primary
-          //                     : Colors.white,
-          //           ),
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
         ),
       ),
     );

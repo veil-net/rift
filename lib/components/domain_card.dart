@@ -54,7 +54,7 @@ class DomainCard extends HookConsumerWidget {
         if (context.mounted) {
           DialogManager.showDialog(
             context,
-            'Connected to domain',
+            'Connected to domain ${domain.name}',
             DialogType.success,
           );
         }

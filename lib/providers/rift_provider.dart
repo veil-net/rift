@@ -3,7 +3,6 @@ import 'dart:convert';
 import 'dart:developer';
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:rift/providers/portal_provider.dart';
 
 import '../main.dart';
 

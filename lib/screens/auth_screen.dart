@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -24,8 +26,58 @@ class AuthScreen extends HookConsumerWidget {
           children: [
             Center(
               child: LayoutBuilder(
-                builder:
-                    (context, constraints) => ConstrainedBox(
+                builder: (context, constraints) {
+                  if (Platform.isWindows ||
+                      Platform.isLinux ||
+                      Platform.isMacOS) {
+                    return ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight:
+                            constraints.maxHeight * 0.6 > 500
+                                ? 500
+                                : constraints.maxHeight * 0.6,
+                        maxWidth: constraints.maxWidth * 0.9 > 1000
+                            ? 1000
+                            : constraints.maxWidth * 0.9,
+                      ),
+                      child: Row(
+                        children: [
+                          Flexible(
+                            child: Padding(
+                              padding: const EdgeInsets.all(32),
+                              child: Image.asset('assets/images/Logo_V.png'),
+                            ),
+                          ),
+                          const SizedBox(width: 32),
+                          Flexible(
+                            child: PageView(
+                              physics: const NeverScrollableScrollPhysics(),
+                              controller: pageController,
+                              children: [
+                                LoginForm(
+                                  pageController: pageController,
+                                  emailController: emailController,
+                                ),
+                                SignUpForm(
+                                  pageController: pageController,
+                                  emailController: emailController,
+                                ),
+                                EmailVerificationForm(
+                                  pageController: pageController,
+                                  emailController: emailController,
+                                ),
+                                PasswordResetForm(
+                                  pageController: pageController,
+                                  emailController: emailController,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  } else {
+                    return ConstrainedBox(
                       constraints: BoxConstraints(
                         maxHeight: constraints.maxHeight * 0.6,
                         maxWidth: constraints.maxWidth * 0.9,
@@ -60,7 +112,9 @@ class AuthScreen extends HookConsumerWidget {
                           ),
                         ],
                       ),
-                    ),
+                    );
+                  }
+                },
               ),
             ),
           ],

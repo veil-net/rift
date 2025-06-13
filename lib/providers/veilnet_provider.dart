@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/services.dart';
@@ -252,7 +253,7 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
           throw Exception('Unsupported platform: ${Platform.operatingSystem}');
       }
     } catch (e) {
-      throw Exception('Failed to start daemon: $e');
+      log('Failed to start daemon', error: e);
     }
   }
 
@@ -270,7 +271,7 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
         public: null,
       );
     } catch (e) {
-      throw Exception('Failed to stop daemon: $e');
+      log('Failed to stop daemon', error: e);
     }
   }
 
