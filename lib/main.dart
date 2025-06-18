@@ -22,7 +22,7 @@ Future<void> main() async {
   }
 
   await Supabase.initialize(
-    url: 'https://zmbpvhvmngyrrsjgqpim.supabase.co',
+    url: 'https://supabase.veilnet.org',
     anonKey:
         'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptYnB2aHZtbmd5cnJzamdxcGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4ODgxMzAsImV4cCI6MjA2MzQ2NDEzMH0.hXvCPaf1AlbLMN0AySzSWk6ML7ZGkgyh1qIEwCqZjMA',
   );

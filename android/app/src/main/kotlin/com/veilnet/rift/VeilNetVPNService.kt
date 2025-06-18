@@ -35,10 +35,16 @@ class VeilNet : VpnService() {
     }
 
     override fun onDestroy() {
-        instance = null
+        vpnScope.cancel()
+        if (tunInterface != null) {
+            tunInterface!!.close()
+            tunInterface = null
+        }
         if (anchor != null) {
             anchor!!.stop()
+            anchor = null
         }
+        instance = null
         super.onDestroy()
     }
 
@@ -57,48 +63,44 @@ class VeilNet : VpnService() {
             return START_NOT_STICKY
         }
 
-        try {
-            anchor = Veilnet.newAnchor(false, isPublic)
-            anchor!!.start(apiBaseUrl, anchorToken, anchorName, domainName, region)
-        } catch (e: Exception) {
-            Log.e("VeilNet", "VPN start failed", e)
-            anchor!!.stop()
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
-        val cidr = try {
-            anchor!!.cidr
-        } catch (e: Exception) {
-            Log.e("VeilNet", "Invalid CIDR after start", e)
-            anchor!!.stop()
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
-        val (ip, mask) = cidr.split("/")
-        val builder = this.Builder()
-            .setSession("VeilNet")
-            .addAddress(ip, mask.toInt())
-            .addDnsServer("1.1.1.1")
-            .addRoute("0.0.0.0", 0)
-            .allowFamily(OsConstants.AF_INET)
-            .setMtu(1500)
-            .addDisallowedApplication(applicationContext.packageName)
-
-        tunInterface = builder.establish()
-        if (tunInterface == null) {
-            Log.e("VeilNet", "Failed to establish TUN interface")
-            anchor!!.stop()
-            stopSelf()
-            return START_NOT_STICKY
-        }
-
         vpnScope.launch {
-            val egressJob = launch { egress() }
-            val ingressJob = launch { ingress() }
-            val livelinessJob = launch { liveliness() }
-            joinAll(egressJob, ingressJob, livelinessJob)
+            try {
+                anchor = Veilnet.newAnchor(false, isPublic)
+                anchor!!.start(apiBaseUrl, anchorToken, anchorName, domainName, region)
+            } catch (e: Exception) {
+                Log.e("VeilNet", "VPN start failed", e)
+                stopSelf()
+                return@launch
+            }
+
+            val cidr = try {
+                anchor!!.cidr
+            } catch (e: Exception) {
+                Log.e("VeilNet", "Failed to get CIDR", e)
+                stopSelf()
+                return@launch
+            }
+
+            val (ip, mask) = cidr.split("/")
+            val builder = this@VeilNet.Builder()
+                .setSession("VeilNet")
+                .addAddress(ip, mask.toInt())
+                .addDnsServer("1.1.1.1")
+                .addRoute("0.0.0.0", 0)
+                .allowFamily(OsConstants.AF_INET)
+                .setMtu(1500)
+                .addDisallowedApplication(applicationContext.packageName)
+
+            tunInterface = builder.establish()
+            if (tunInterface == null) {
+                Log.e("VeilNet", "Failed to establish TUN interface")
+                stopSelf()
+                return@launch
+            }
+
+            launch { egress() }
+            launch { ingress() }
+            launch { liveliness() }
         }
 
         return START_STICKY
@@ -108,12 +110,17 @@ class VeilNet : VpnService() {
     private fun stop() {
         try {
             vpnScope.cancel()
-            tunInterface?.close()
-            anchor?.stop()
-            anchor = null
+            if (tunInterface != null) {
+                tunInterface!!.close()
+                tunInterface = null
+            }
+            if (anchor != null) {
+                anchor!!.stop()
+                anchor = null
+            }
             stopSelf()
         } catch (e: Exception) {
-            Log.w("VeilNet", "Cleanup failed", e)
+            Log.w("VeilNet", "Failed to stop VPN service", e)
             throw e
         }
     }

@@ -214,7 +214,7 @@ class DaemonStatusCard extends HookConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          veilnet.domain ?? 'Unknown',
+                          'Unknown',
                           style: Theme.of(
                             context,
                           ).textTheme.titleMedium?.copyWith(

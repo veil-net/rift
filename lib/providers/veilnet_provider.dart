@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../veilnet.pb.dart';
 import '../main.dart';
 
@@ -29,9 +30,6 @@ class VeilNetState {
   final List<String> logs;
   final Process? process;
   final String? anchorName;
-  final String? domain;
-  final String? region;
-  final bool? public;
 
   VeilNetState({
     this.isRunning = false,
@@ -40,9 +38,6 @@ class VeilNetState {
     this.logs = const [],
     this.process,
     this.anchorName,
-    this.domain,
-    this.region,
-    this.public,
   });
 
   VeilNetState copyWith({
@@ -52,9 +47,6 @@ class VeilNetState {
     List<String>? logs,
     Process? process,
     String? anchorName,
-    String? domain,
-    String? region,
-    bool? public,
   }) {
     return VeilNetState(
       isRunning: isRunning ?? this.isRunning,
@@ -63,154 +55,78 @@ class VeilNetState {
       logs: logs ?? this.logs,
       process: process ?? this.process,
       anchorName: anchorName ?? this.anchorName,
-      domain: domain ?? this.domain,
-      region: region ?? this.region,
-      public: public ?? this.public,
     );
   }
 
   Map<String, dynamic> toJson() {
-    return {
-      'anchorName': anchorName,
-      'domain': domain,
-      'region': region,
-      'public': public,
-    };
+    return {'anchorName': anchorName};
   }
 
   factory VeilNetState.fromJson(Map<String, dynamic> json) {
-    return VeilNetState(
-      anchorName: json['anchorName'],
-      domain: json['domainName'],
-      region: json['region'],
-      public: json['public'],
-    );
+    return VeilNetState(anchorName: json['anchorName']);
   }
 }
 
 class VeilNetNotifier extends StateNotifier<VeilNetState> {
+  Timer? _stateCheckTimer;
+
   VeilNetNotifier() : super(VeilNetState()) {
     _loadState();
+    _startPeriodicStateCheck();
   }
 
-  Future<bool> _fetchRiftSession() async {
-    // Check if the user is logged in
-    final userId = supabase.auth.currentUser?.id;
-    if (userId == null) return false;
+  void _startPeriodicStateCheck() {
+    _stateCheckTimer?.cancel();
+    _stateCheckTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      _loadState();
+    });
+  }
 
-    // Check if the domain, anchor name, region, and public are set
-    if (state.domain == null ||
-        state.anchorName == null ||
-        state.region == null ||
-        state.public == null) {
-      return false;
-    }
-
-    final domain =
-        state.public!
-            ? await supabase
-                .from('public_domains')
-                .select('id')
-                .eq('name', state.domain!)
-                .eq('region', state.region!)
-            : await supabase
-                .from('private_domains')
-                .select('id')
-                .eq('name', state.domain!)
-                .eq('region', state.region!)
-                .eq('user_id', userId);
-
-    final rift =
-        state.public!
-            ? await supabase
-                .from('public_rifts')
-                .select('*')
-                .eq('domain_id', domain.first['id'])
-                .eq('name', state.anchorName!)
-                .eq('user_id', userId)
-            : await supabase
-                .from('private_rifts')
-                .select('*')
-                .eq('domain_id', domain.first['id'])
-                .eq('name', state.anchorName!)
-                .eq('user_id', userId);
-
-    if (rift.isEmpty) return false;
-
-    return true;
+  @override
+  void dispose() {
+    _stateCheckTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _loadState() async {
-    try {
-      // Load the saved state from the shared preferences
-      final prefs = await SharedPreferences.getInstance();
-      final savedState = prefs.getString('veilnet_state');
+    final prefs = await SharedPreferences.getInstance();
+    final anchorName = prefs.getString('anchorName');
+    state = state.copyWith(anchorName: anchorName);
 
-      // If there is no saved state, set the state to the default values
-      if (savedState == null) {
-        state = state.copyWith(
-          isConnected: false,
-          anchorName: null,
-          domain: null,
-          region: null,
-          public: null,
-        );
-        return;
-      }
+    final publicRift = await supabase
+        .from('public_rifts')
+        .select('*')
+        .eq('name', state.anchorName ?? '');
+    final privateRift = await supabase
+        .from('private_rifts')
+        .select('*')
+        .eq('name', state.anchorName ?? '');
 
-      // If there is a saved state, set the state to the saved values
-      final savedStateJson = json.decode(savedState);
-      state = state.copyWith(
-        anchorName: savedStateJson['anchorName'],
-        domain: savedStateJson['domain'],
-        region: savedStateJson['region'],
-        public: savedStateJson['public'],
-      );
+    if (publicRift.isNotEmpty) {
+      state = state.copyWith(isConnected: true, isBusy: false);
+      log('Public rift found, set VeilNetState to connected');
+      return;
+    }
 
-      // If the rift session exists, set the state to connected
-      final riftSessionExists = await _fetchRiftSession();
-      if (riftSessionExists) {
-        state = state.copyWith(isConnected: true);
-        return;
+    if (privateRift.isNotEmpty) {
+      state = state.copyWith(isConnected: true, isBusy: false);
+      log('Private rift found, set VeilNetState to connected');
+      return;
+    }
+
+    if (publicRift.isEmpty && privateRift.isEmpty) {
+      if (state.isConnected) {
+        state = state.copyWith(isConnected: false, isBusy: false);
+        log('No rift found, set VeilNetState to disconnected');
       } else {
-        // If the rift session does not exist, set the state to disconnected
-        state = state.copyWith(
-          isConnected: false,
-          anchorName: null,
-          domain: null,
-          region: null,
-          public: null,
-        );
+        log('No rift found, but VeilNetState is already disconnected');
       }
-    } catch (e) {
-      state = state.copyWith(
-        isConnected: false,
-        anchorName: null,
-        domain: null,
-        region: null,
-        public: null,
-      );
-    } finally {
-      await _saveState();
     }
   }
 
   Future<void> _saveState() async {
     final prefs = await SharedPreferences.getInstance();
-    // Create a copy of the state without isRunning and isBusy
-    final stateToSave = {
-      'anchorName': state.anchorName,
-      'domain': state.domain,
-      'region': state.region,
-      'public': state.public,
-    };
-    await prefs.setString('veilnet_state', json.encode(stateToSave));
-  }
-
-  @override
-  set state(VeilNetState newState) {
-    super.state = newState;
-    _saveState();
+    await prefs.setString('anchorName', state.anchorName ?? '');
   }
 
   Future<void> startDaemon() async {
@@ -266,9 +182,6 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
         process: null,
         isConnected: false,
         anchorName: null,
-        domain: null,
-        region: null,
-        public: null,
       );
     } catch (e) {
       log('Failed to stop daemon', error: e);
@@ -389,37 +302,13 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
             throw Exception('Failed to start the VPN service');
           }
           break;
-
-        case "linux":
-        case "macos":
-        case "ios":
-          // TODO: Implement logic for Linux/macOS if needed
-          break;
       }
 
-      state = state.copyWith(
-        anchorName: anchorName,
-        domain: domainName,
-        region: region,
-        public: public,
-      );
-
-      if (await _fetchRiftSession()) {
-        state = state.copyWith(isConnected: true);
-      } else {
-        state = state.copyWith(
-          isConnected: false,
-          anchorName: null,
-          domain: null,
-          region: null,
-          public: null,
-        );
-        throw Exception('Failed to find rift session');
-      }
+      state = state.copyWith(anchorName: anchorName);
     } catch (e) {
       throw Exception('Failed to connect: $e');
     } finally {
-      state = state.copyWith(isBusy: false);
+      await _saveState();
     }
   }
 
@@ -454,25 +343,13 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
             throw Exception("Failed to shutdown VPN on Android");
           }
           break;
-
-        case "linux":
-        case "macos":
-        case "ios":
-          // TODO: implement shutdown logic if needed
-          break;
       }
 
-      state = state.copyWith(
-        anchorName: null,
-        domain: null,
-        region: null,
-        public: null,
-        isConnected: false,
-      );
+      state = state.copyWith(anchorName: null);
     } catch (e) {
       throw Exception('Failed to disconnect: $e');
     } finally {
-      state = state.copyWith(isBusy: false);
+      await _saveState();
     }
   }
 }

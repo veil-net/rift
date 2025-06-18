@@ -20,7 +20,7 @@ class DomainCard extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final veilnet = ref.watch(veilnetNotifierProvider);
     final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
-    final isBusy = useState(false);
+    // final isBusy = useState(false);
 
     final rifts = ref.watch(riftProvider(public));
 
@@ -38,7 +38,7 @@ class DomainCard extends HookConsumerWidget {
 
     Future<void> connect() async {
       try {
-        isBusy.value = true;
+        // isBusy.value = true;
         final api = ref.read(apiProvider);
         final response = await api.get('/auth/token');
         final anchorToken = response.data['access_token'];
@@ -67,7 +67,7 @@ class DomainCard extends HookConsumerWidget {
           );
         }
       } finally {
-        isBusy.value = false;
+        // isBusy.value = false;
         ref.invalidate(riftProvider(public));
         ref.invalidate(portalProvider(public));
       }
@@ -102,17 +102,7 @@ class DomainCard extends HookConsumerWidget {
                       veilnet.isConnected || veilnet.isBusy
                           ? null
                           : () async {
-                            try {
-                              await connect();
-                            } catch (e) {
-                              if (context.mounted) {
-                                DialogManager.showDialog(
-                                  context,
-                                  'Failed to connect to domain: $e',
-                                  DialogType.error,
-                                );
-                              }
-                            }
+                            await connect();
                           },
                   icon: Icon(Icons.power_settings_new),
                   label:
