@@ -3,13 +3,14 @@ import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 import 'dart:typed_data';
+
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import '../veilnet.pb.dart';
+
 import '../main.dart';
+import '../veilnet.pb.dart';
 
 String stripAnsiColors(String text) =>
     text.replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '');
@@ -30,6 +31,10 @@ class VeilNetState {
   final List<String> logs;
   final Process? process;
   final String? anchorName;
+  final String? anchorID;
+  final String? domain;
+  final String? region;
+  final bool? public;
 
   VeilNetState({
     this.isRunning = false,
@@ -38,6 +43,10 @@ class VeilNetState {
     this.logs = const [],
     this.process,
     this.anchorName,
+    this.anchorID,
+    this.domain,
+    this.region,
+    this.public,
   });
 
   VeilNetState copyWith({
@@ -47,6 +56,10 @@ class VeilNetState {
     List<String>? logs,
     Process? process,
     String? anchorName,
+    String? anchorID,
+    String? domain,
+    String? region,
+    bool? public,
   }) {
     return VeilNetState(
       isRunning: isRunning ?? this.isRunning,
@@ -55,6 +68,10 @@ class VeilNetState {
       logs: logs ?? this.logs,
       process: process ?? this.process,
       anchorName: anchorName ?? this.anchorName,
+      anchorID: anchorID ?? this.anchorID,
+      domain: domain ?? this.domain,
+      region: region ?? this.region,
+      public: public ?? this.public,
     );
   }
 
@@ -89,44 +106,121 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
   }
 
   Future<void> _loadState() async {
+
+    // Load state from prefs
     final prefs = await SharedPreferences.getInstance();
     final anchorName = prefs.getString('anchorName');
-    state = state.copyWith(anchorName: anchorName);
+    final public = prefs.getBool('public');
 
-    final publicRift = await supabase
-        .from('public_rifts')
-        .select('*')
-        .eq('name', state.anchorName ?? '');
-    final privateRift = await supabase
-        .from('private_rifts')
-        .select('*')
-        .eq('name', state.anchorName ?? '');
-
-    if (publicRift.isNotEmpty) {
-      state = state.copyWith(isConnected: true, isBusy: false);
-      log('Public rift found, set VeilNetState to connected');
+    // If anchorName or public is null, set state to disconnected
+    if (anchorName == null || public == null) {
+      state = state.copyWith(
+        anchorName: null,
+        anchorID: null,
+        domain: null,
+        region: null,
+        public: null,
+        isConnected: false,
+        isBusy: false,
+      );
       return;
     }
 
-    if (privateRift.isNotEmpty) {
-      state = state.copyWith(isConnected: true, isBusy: false);
-      log('Private rift found, set VeilNetState to connected');
-      return;
-    }
+    // Start checking state from supabase
+    state = state.copyWith(anchorName: anchorName, public: public);
+    Timer.periodic(const Duration(seconds: 5), (timer) async {
+      final riftDetails =
+          public
+              ? await supabase
+                  .from('public_rift_details')
+                  .select('*')
+                  .eq('name', state.anchorName ?? '')
+              : await supabase
+                  .from('private_rift_details')
+                  .select('*')
+                  .eq('name', state.anchorName ?? '');
 
-    if (publicRift.isEmpty && privateRift.isEmpty) {
-      if (state.isConnected) {
-        state = state.copyWith(isConnected: false, isBusy: false);
-        log('No rift found, set VeilNetState to disconnected');
+      if (riftDetails.isNotEmpty) {
+        state = state.copyWith(
+          isConnected: true,
+          anchorID: riftDetails.first['id'],
+          domain: riftDetails.first['domain'],
+          region: riftDetails.first['region'],
+        );
       } else {
-        log('No rift found, but VeilNetState is already disconnected');
+        state = state.copyWith(isConnected: false);
       }
-    }
+    });
   }
 
   Future<void> _saveState() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString('anchorName', state.anchorName ?? '');
+    await prefs.setBool('public', state.public ?? false);
+  }
+
+  Future<void> _fetchStateAfterConnect() async {
+    final startAt = DateTime.now();
+    Timer.periodic(const Duration(seconds: 5), (timer) async {
+      final riftDetails =
+          state.public!
+              ? await supabase
+                  .from('public_rift_details')
+                  .select('*')
+                  .eq('name', state.anchorName ?? '')
+              : await supabase
+                  .from('private_rift_details')
+                  .select('*')
+                  .eq('name', state.anchorName ?? '');
+
+      if (riftDetails.isNotEmpty) {
+        state = state.copyWith(
+          isConnected: true,
+          isBusy: false,
+          anchorID: riftDetails.first['id'],
+          domain: riftDetails.first['domain'],
+          region: riftDetails.first['region'],
+        );
+        timer.cancel();
+      }
+
+      if (DateTime.now().difference(startAt).inSeconds > 15) {
+        state = state.copyWith(isBusy: false);
+        timer.cancel();
+      }
+    });
+  }
+
+  Future<void> _fetchStateAfterDisconnect() async {
+    final startAt = DateTime.now();
+    Timer.periodic(const Duration(seconds: 5), (timer) async {
+      final riftDetails =
+          state.public!
+              ? await supabase
+                  .from('public_rift_details')
+                  .select('*')
+                  .eq('name', state.anchorName ?? '')
+              : await supabase
+                  .from('private_rift_details')
+                  .select('*')
+                  .eq('name', state.anchorName ?? '');
+
+      if (riftDetails.isEmpty) {
+        state = state.copyWith(
+          isConnected: false,
+          isBusy: false,
+          anchorID: null,
+          domain: null,
+          region: null,
+        );
+        timer.cancel();
+      }
+
+      if (DateTime.now().difference(startAt).inSeconds > 15) {
+        state = state.copyWith(isBusy: false);
+        timer.cancel();
+      }
+    });
   }
 
   Future<void> startDaemon() async {
@@ -304,11 +398,12 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
           break;
       }
 
-      state = state.copyWith(anchorName: anchorName);
+      state = state.copyWith(anchorName: anchorName, public: public);
     } catch (e) {
       throw Exception('Failed to connect: $e');
     } finally {
       await _saveState();
+      await _fetchStateAfterConnect();
     }
   }
 
@@ -335,21 +430,20 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
           break;
 
         case "android":
-          // if (!state.isConnected || state.isBusy) {
-          //   throw Exception('Invalid daemon state');
-          // }
+          if (!state.isConnected) {
+            throw Exception('Invalid daemon state');
+          }
           final success = await _vpnChannel.invokeMethod<bool>("shutdownVpn");
           if (success != true) {
             throw Exception("Failed to shutdown VPN on Android");
           }
           break;
       }
-
-      state = state.copyWith(anchorName: null);
     } catch (e) {
       throw Exception('Failed to disconnect: $e');
     } finally {
       await _saveState();
+      await _fetchStateAfterDisconnect();
     }
   }
 }

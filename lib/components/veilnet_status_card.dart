@@ -68,7 +68,7 @@ class DaemonStatusCard extends HookConsumerWidget {
                       onPressed: () {
                         DialogManager.showDialog(
                           context,
-                          'The MP (Minutes of Participation) system enables users to access VeilNet services without a subscription. Users can earn MP by self-hosting VeilNet Portals under public domains, with each Portal generating 1 MP per second. These MP are then consumed by the user’s Public Rifts at the same rate. This system incentivizes community hosting and rewards users with continued access to the network in a decentralized, contribution-based model.',
+                          'The MP (Measurement of Participation) system enables users to access VeilNet services without a subscription. Users can earn MP by self-hosting VeilNet Portals under public domains, with each Portal generating 1 MP per second. These MP are then consumed by the user’s Public Rifts at the same rate. This system incentivizes community hosting and rewards users with continued access to the network in a decentralized, contribution-based model.',
                           DialogType.info,
                         );
                       },
@@ -201,7 +201,17 @@ class DaemonStatusCard extends HookConsumerWidget {
                   ),
                 ],
               ),
-              veilnet.isConnected
+              veilnet.isBusy
+                  ? ListTile(
+                    leading: const CircularProgressIndicator(),
+                    title: Text(
+                      '......',
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                  )
+                  : veilnet.isConnected
                   ? ListTile(
                     leading: Icon(Icons.check_circle, color: Colors.green),
                     title: Text(
@@ -214,7 +224,7 @@ class DaemonStatusCard extends HookConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          'Unknown',
+                          veilnet.domain ?? 'Unknown',
                           style: Theme.of(
                             context,
                           ).textTheme.titleMedium?.copyWith(

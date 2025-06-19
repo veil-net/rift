@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import 'dialog.dart';
 import '../providers/api_provider.dart';
 import '../providers/domain_provider.dart';
 import '../providers/portal_provider.dart';
 import '../providers/rift_provider.dart';
 import '../providers/veilnet_provider.dart';
+import 'dialog.dart';
 import 'glass_card.dart';
 
 class DomainCard extends HookConsumerWidget {
@@ -20,11 +19,6 @@ class DomainCard extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final veilnet = ref.watch(veilnetNotifierProvider);
     final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
-    // final isBusy = useState(false);
-
-    final rifts = ref.watch(riftProvider(public));
-
-    final portals = ref.watch(portalProvider(public));
 
     String countryCodeToFlagEmoji(String countryCode) {
       if (countryCode.length != 2) return '';
@@ -51,13 +45,6 @@ class DomainCard extends HookConsumerWidget {
           domain.region,
           public,
         );
-        if (context.mounted) {
-          DialogManager.showDialog(
-            context,
-            'Connected to domain ${domain.name}',
-            DialogType.success,
-          );
-        }
       } catch (e) {
         if (context.mounted) {
           DialogManager.showDialog(
@@ -115,113 +102,113 @@ class DomainCard extends HookConsumerWidget {
                           : const Text('Connect'),
                 ),
               ),
-              const Divider(),
-              Text(
-                'You connections:',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
-              const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: GlassCard(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.cyclone,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                        title: portals.when(
-                          data:
-                              (data) => Text(
-                                '${data.where((portal) => portal.domain_id == domain.id && portal.online).length}/${data.where((portal) => portal.domain_id == domain.id).length}',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                          error:
-                              (error, stack) => Text(
-                                'Error',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                          loading:
-                              () => Text(
-                                'Loading...',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                        ),
-                        subtitle: Text(
-                          'Portals',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: GlassCard(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.electric_bolt,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                        title: rifts.when(
-                          data:
-                              (data) => Text(
-                                '${data.where((rift) => rift.domain_id == domain.id && rift.online).length}/${data.where((rift) => rift.domain_id == domain.id).length}',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                          error:
-                              (error, stack) => Text(
-                                'Error',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                          loading:
-                              () => Text(
-                                'Loading...',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                        ),
-                        subtitle: Text(
-                          'Rifts',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+              // const Divider(),
+              // Text(
+              //   'You connections:',
+              //   style: Theme.of(context).textTheme.titleSmall?.copyWith(
+              //     color: Theme.of(context).colorScheme.primary,
+              //   ),
+              // ),
+              // const SizedBox(height: 8),
+              // Row(
+              //   children: [
+              //     Expanded(
+              //       child: GlassCard(
+              //         child: ListTile(
+              //           leading: Icon(
+              //             Icons.cyclone,
+              //             color: Theme.of(context).colorScheme.secondary,
+              //           ),
+              //           title: portals.when(
+              //             data:
+              //                 (data) => Text(
+              //                   '${data.where((portal) => portal.domain_id == domain.id && portal.online).length}/${data.where((portal) => portal.domain_id == domain.id).length}',
+              //                   style: Theme.of(
+              //                     context,
+              //                   ).textTheme.titleMedium?.copyWith(
+              //                     color: Theme.of(context).colorScheme.primary,
+              //                   ),
+              //                 ),
+              //             error:
+              //                 (error, stack) => Text(
+              //                   'Error',
+              //                   style: Theme.of(
+              //                     context,
+              //                   ).textTheme.titleMedium?.copyWith(
+              //                     color: Theme.of(context).colorScheme.error,
+              //                   ),
+              //                 ),
+              //             loading:
+              //                 () => Text(
+              //                   'Loading...',
+              //                   style: Theme.of(
+              //                     context,
+              //                   ).textTheme.titleMedium?.copyWith(
+              //                     color: Theme.of(context).colorScheme.primary,
+              //                   ),
+              //                 ),
+              //           ),
+              //           subtitle: Text(
+              //             'Portals',
+              //             style: Theme.of(
+              //               context,
+              //             ).textTheme.titleSmall?.copyWith(
+              //               color: Theme.of(context).colorScheme.secondary,
+              //             ),
+              //           ),
+              //         ),
+              //       ),
+              //     ),
+              //     const SizedBox(width: 16),
+              //     Expanded(
+              //       child: GlassCard(
+              //         child: ListTile(
+              //           leading: Icon(
+              //             Icons.electric_bolt,
+              //             color: Theme.of(context).colorScheme.secondary,
+              //           ),
+              //           title: rifts.when(
+              //             data:
+              //                 (data) => Text(
+              //                   '${data.where((rift) => rift.domain_id == domain.id && rift.online).length}/${data.where((rift) => rift.domain_id == domain.id).length}',
+              //                   style: Theme.of(
+              //                     context,
+              //                   ).textTheme.titleMedium?.copyWith(
+              //                     color: Theme.of(context).colorScheme.primary,
+              //                   ),
+              //                 ),
+              //             error:
+              //                 (error, stack) => Text(
+              //                   'Error',
+              //                   style: Theme.of(
+              //                     context,
+              //                   ).textTheme.titleMedium?.copyWith(
+              //                     color: Theme.of(context).colorScheme.error,
+              //                   ),
+              //                 ),
+              //             loading:
+              //                 () => Text(
+              //                   'Loading...',
+              //                   style: Theme.of(
+              //                     context,
+              //                   ).textTheme.titleMedium?.copyWith(
+              //                     color: Theme.of(context).colorScheme.primary,
+              //                   ),
+              //                 ),
+              //           ),
+              //           subtitle: Text(
+              //             'Rifts',
+              //             style: Theme.of(
+              //               context,
+              //             ).textTheme.titleSmall?.copyWith(
+              //               color: Theme.of(context).colorScheme.secondary,
+              //             ),
+              //           ),
+              //         ),
+              //       ),
+              //     ),
+              //   ],
+              // ),
             ],
           ),
         ),

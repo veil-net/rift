@@ -28,6 +28,7 @@ class VeilNet : VpnService() {
     private var tunInterface: ParcelFileDescriptor? = null
     private var anchor: veilnet.Anchor? = null
     private val vpnScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private val stopScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     override fun onCreate() {
         super.onCreate()
@@ -36,6 +37,7 @@ class VeilNet : VpnService() {
 
     override fun onDestroy() {
         vpnScope.cancel()
+        stopScope.cancel()
         if (tunInterface != null) {
             tunInterface!!.close()
             tunInterface = null
@@ -109,16 +111,18 @@ class VeilNet : VpnService() {
 
     private fun stop() {
         try {
-            vpnScope.cancel()
-            if (tunInterface != null) {
-                tunInterface!!.close()
-                tunInterface = null
+            stopScope.launch {
+                vpnScope.cancel()
+                if (tunInterface != null) {
+                    tunInterface!!.close()
+                    tunInterface = null
+                }
+                if (anchor != null) {
+                    anchor!!.stop()
+                    anchor = null
+                }
+                stopSelf()
             }
-            if (anchor != null) {
-                anchor!!.stop()
-                anchor = null
-            }
-            stopSelf()
         } catch (e: Exception) {
             Log.w("VeilNet", "Failed to stop VPN service", e)
             throw e
