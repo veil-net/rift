@@ -127,30 +127,36 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
     }
 
     // Start checking state from supabase
-    state = state.copyWith(anchorName: anchorName, public: public);
+    state = state.copyWith(anchorName: anchorName, public: public, isBusy: true);
+    await fetchState(public);
+    state = state.copyWith(isBusy: false);
     Timer.periodic(const Duration(seconds: 5), (timer) async {
-      final riftDetails =
-          public
-              ? await supabase
-                  .from('public_rift_details')
-                  .select('*')
-                  .eq('name', state.anchorName ?? '')
-              : await supabase
-                  .from('private_rift_details')
-                  .select('*')
-                  .eq('name', state.anchorName ?? '');
-
-      if (riftDetails.isNotEmpty) {
-        state = state.copyWith(
-          isConnected: true,
-          anchorID: riftDetails.first['id'],
-          domain: riftDetails.first['domain'],
-          region: riftDetails.first['region'],
-        );
-      } else {
-        state = state.copyWith(isConnected: false);
-      }
+      await fetchState(public);
     });
+  }
+
+  Future<void> fetchState(bool public) async {
+    final riftDetails =
+        public
+            ? await supabase
+                .from('public_rift_details')
+                .select('*')
+                .eq('name', state.anchorName ?? '')
+            : await supabase
+                .from('private_rift_details')
+                .select('*')
+                .eq('name', state.anchorName ?? '');
+    
+    if (riftDetails.isNotEmpty) {
+      state = state.copyWith(
+        isConnected: true,
+        anchorID: riftDetails.first['id'],
+        domain: riftDetails.first['domain'],
+        region: riftDetails.first['region'],
+      );
+    } else {
+      state = state.copyWith(isConnected: false);
+    }
   }
 
   Future<void> _saveState() async {
