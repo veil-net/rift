@@ -182,7 +182,7 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
         timer.cancel();
       }
 
-      if (DateTime.now().difference(startAt).inSeconds > 15) {
+      if (DateTime.now().difference(startAt).inSeconds > 30) {
         state = state.copyWith(isBusy: false);
         timer.cancel();
       }
@@ -214,7 +214,7 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
         timer.cancel();
       }
 
-      if (DateTime.now().difference(startAt).inSeconds > 15) {
+      if (DateTime.now().difference(startAt).inSeconds > 30) {
         state = state.copyWith(isBusy: false);
         timer.cancel();
       }
