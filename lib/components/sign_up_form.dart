@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../main.dart';
 import 'glass_card.dart';
@@ -29,7 +31,7 @@ class SignUpForm extends HookConsumerWidget {
       if (!termsAccepted.value) {
         DialogManager.showDialog(
           context,
-          'Please accept the terms and conditions',
+          'Please accept the Terms of Service',
           DialogType.error,
         );
         return;
@@ -140,9 +142,35 @@ class SignUpForm extends HookConsumerWidget {
                         onTap: () {
                           termsAccepted.value = !termsAccepted.value;
                         },
-                        child: Text(
-                          'I accept the Terms and Conditions and Privacy Policy',
-                          style: Theme.of(context).textTheme.bodyMedium,
+                        child: RichText(
+                          text: TextSpan(
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            children: [
+                              const TextSpan(text: 'I accept the '),
+                              TextSpan(
+                                text: 'Terms of Service',
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.primary,
+                                  decoration: TextDecoration.underline,
+                                ),
+                                recognizer: TapGestureRecognizer()
+                                  ..onTap = () async {
+                                    final url = Uri.parse('https://www.veilnet.org/term-of-services/');
+                                    try {
+                                      await launchUrl(url, mode: LaunchMode.externalApplication);
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        DialogManager.showDialog(
+                                          context,
+                                          'Could not open Terms of Service: $e',
+                                          DialogType.error,
+                                        );
+                                      }
+                                    }
+                                  },
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
