@@ -323,7 +323,7 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
     );
 
     return completer.future.timeout(
-      const Duration(seconds: 10),
+      const Duration(seconds: 30),
       onTimeout: () {
         socket.destroy();
         throw Exception('IPC response timeout');
