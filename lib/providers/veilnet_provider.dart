@@ -159,7 +159,7 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
 
   Future<void> _fetchStateAfterConnect() async {
     final startAt = DateTime.now();
-    Timer.periodic(const Duration(seconds: 5), (timer) async {
+    Timer.periodic(const Duration(seconds: 3), (timer) async {
       final riftDetails =
           state.public!
               ? await supabase
@@ -191,7 +191,7 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
 
   Future<void> _fetchStateAfterDisconnect() async {
     final startAt = DateTime.now();
-    Timer.periodic(const Duration(seconds: 5), (timer) async {
+    Timer.periodic(const Duration(seconds: 3), (timer) async {
       final riftDetails =
           state.public!
               ? await supabase
@@ -343,7 +343,7 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
       if (state.isBusy) {
         throw Exception('Daemon is busy, please wait for it to finish');
       }
-      state = state.copyWith(isBusy: true);
+      state = state.copyWith(isBusy: true, anchorName: anchorName, public: public);
       switch (Platform.operatingSystem) {
         case "windows":
           if (!state.isRunning || state.isConnected) {
@@ -395,9 +395,8 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
           }
           break;
       }
-
-      state = state.copyWith(anchorName: anchorName, public: public);
     } catch (e) {
+      state = state.copyWith(isBusy: false, anchorName: null, public: null);
       throw Exception('Failed to connect: $e');
     } finally {
       await _saveState();
