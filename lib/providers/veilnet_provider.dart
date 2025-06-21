@@ -89,14 +89,6 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
 
   VeilNetNotifier() : super(VeilNetState()) {
     _loadState();
-    _startPeriodicStateCheck();
-  }
-
-  void _startPeriodicStateCheck() {
-    _stateCheckTimer?.cancel();
-    _stateCheckTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      _loadState();
-    });
   }
 
   @override
