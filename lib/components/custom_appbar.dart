@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../providers/user_provider.dart';
+import '../providers/veilnet_provider.dart';
 import '../screens/daemon_screen.dart';
 import 'dialog.dart';
 
@@ -16,9 +17,14 @@ class CustomAppBar extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final userServiceTier = ref.watch(userServiceTierProvider);
+    final veilnet = ref.watch(veilnetNotifierProvider);
+    final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
 
     Future<void> logout() async {
       try {
+        if (veilnet.isConnected) {
+          await veilnetNotifier.disconnect();
+        }
         await supabase.auth.signOut();
       } on AuthException catch (e) {
         if (context.mounted) {
