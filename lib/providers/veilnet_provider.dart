@@ -98,7 +98,6 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
   }
 
   Future<void> _loadState() async {
-
     // Load state from prefs
     final prefs = await SharedPreferences.getInstance();
     final anchorName = prefs.getString('anchorName');
@@ -119,11 +118,15 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
     }
 
     // Start checking state from supabase
-    state = state.copyWith(anchorName: anchorName, public: public, isBusy: true);
-    await fetchState(public);
+    state = state.copyWith(
+      anchorName: anchorName,
+      public: public,
+      isBusy: true,
+    );
+    await fetchState(state.public ?? false);
     state = state.copyWith(isBusy: false);
     Timer.periodic(const Duration(seconds: 5), (timer) async {
-      await fetchState(public);
+      await fetchState(state.public ?? false);
     });
   }
 
@@ -138,7 +141,7 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
                 .from('private_rift_details')
                 .select('*')
                 .eq('name', state.anchorName ?? '');
-    
+
     if (riftDetails.isNotEmpty) {
       state = state.copyWith(
         isConnected: true,
@@ -343,7 +346,11 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
       if (state.isBusy) {
         throw Exception('Daemon is busy, please wait for it to finish');
       }
-      state = state.copyWith(isBusy: true, anchorName: anchorName, public: public);
+      state = state.copyWith(
+        isBusy: true,
+        anchorName: anchorName,
+        public: public,
+      );
       switch (Platform.operatingSystem) {
         case "windows":
           if (!state.isRunning || state.isConnected) {
