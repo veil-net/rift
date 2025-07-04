@@ -18,6 +18,7 @@ class EmailVerificationForm extends HookConsumerWidget {
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final otpController = useTextEditingController();
     final isBusy = useState(false);
+    final tokenSent = useState(false);
 
     Future<void> verifyEmail() async {
       if (!formKey.currentState!.validate()) {
@@ -29,7 +30,7 @@ class EmailVerificationForm extends HookConsumerWidget {
         await supabase.auth.verifyOTP(
           email: emailController.text,
           token: otpController.text,
-          type: OtpType.signup,
+          type: OtpType.email,
         );
         if (context.mounted) {
           DialogManager.showDialog(context, 'Email verified successfully', DialogType.success);
@@ -54,10 +55,10 @@ class EmailVerificationForm extends HookConsumerWidget {
     Future<void> resendToken() async {
       try {
         isBusy.value = true;
-        await supabase.auth.resend(
-          type: OtpType.signup,
+        await supabase.auth.signInWithOtp(
           email: emailController.text,
         );
+        tokenSent.value = true;
       } on AuthException catch (e) {
         if (context.mounted) {
           DialogManager.showDialog(context, e.message, DialogType.error);
@@ -119,8 +120,8 @@ class EmailVerificationForm extends HookConsumerWidget {
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
                     FilledButton.icon(
-                      onPressed: isBusy.value ? null : resendToken,
-                      label: const Text('Resend Token'),
+                      onPressed: isBusy.value || tokenSent.value ? null : resendToken,
+                      label: tokenSent.value ? const Text('Token Sent') : const Text('Resend Token'),
                       icon: const Icon(Icons.send),
                     ),
                     FilledButton.icon(
