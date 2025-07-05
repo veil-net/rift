@@ -16,6 +16,7 @@ class CustomAppBar extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final userState = ref.watch(userProvider);
     final userServiceTier = ref.watch(userServiceTierProvider);
     final veilnet = ref.watch(veilnetNotifierProvider);
     final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
@@ -126,7 +127,16 @@ class CustomAppBar extends HookConsumerWidget {
             ),
             TextButton(
               onPressed: () {
-                launchUrl(Uri.parse('https://console.veilnet.org'));
+                final refreshToken = userState.session?.refreshToken;
+                if (refreshToken != null) {
+                  launchUrl(
+                    Uri.parse(
+                      'https://console.veilnet.org?refreshToken=$refreshToken',
+                    ),
+                  );
+                } else {
+                  launchUrl(Uri.parse('https://console.veilnet.org'));
+                }
               },
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.onSurface,

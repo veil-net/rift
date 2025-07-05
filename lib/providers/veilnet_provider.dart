@@ -125,12 +125,13 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
     );
     await fetchState(state.public ?? false);
     state = state.copyWith(isBusy: false);
-    Timer.periodic(const Duration(seconds: 5), (timer) async {
+    _stateCheckTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
       await fetchState(state.public ?? false);
     });
   }
 
   Future<void> fetchState(bool public) async {
+    try{
     final riftDetails =
         public
             ? await supabase
@@ -151,6 +152,9 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
       );
     } else {
       state = state.copyWith(isConnected: false);
+    }
+    } catch (e) {
+      log('Failed to fetch state', error: e);
     }
   }
 
