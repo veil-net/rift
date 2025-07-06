@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../main.dart';
@@ -54,11 +56,14 @@ final userServiceTierProvider = FutureProvider<int>((ref) async {
     final userData = await supabase
         .from('subscriptions')
         .select('service_tier')
-        .eq('id', user.user!.id)
+        .eq('user_id', user.user!.id)
         .order('service_tier', ascending: true);
     if (userData.isNotEmpty) {
-      return int.parse(userData[0]['service_tier']);
+      final serviceTier = userData[0]['service_tier'];
+      log('Service tier: $serviceTier');
+      return serviceTier;
     } else {
+      log('No service tier found');
       return 0;
     }
   }

@@ -54,8 +54,6 @@ class CustomAppBar extends HookConsumerWidget {
       }
     }
 
-    ;
-
     return ClipRRect(
       child: BackdropFilter(
         filter: ImageFilter.blur(sigmaX: 100.0, sigmaY: 100.0),
