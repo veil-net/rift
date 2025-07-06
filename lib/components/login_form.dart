@@ -150,28 +150,28 @@ class LoginForm extends HookConsumerWidget {
                           : const Text('Login'),
                 ),
                 const SizedBox(height: 16),
-                TextButton(
-                  onPressed: () async {
-                    try {
-                      await googleSignIn();
-                      if (context.mounted) {
-                        Navigator.pushReplacement(
-                          context,
-                          MaterialPageRoute(builder: (context) => const HomeScreen()),
-                        );
-                      }
-                    } on AuthException catch (e) {
-                      if (context.mounted) {
-                        DialogManager.showDialog(context, e.message, DialogType.error);
-                      }
-                    } catch (e) {
-                      if (context.mounted) {
-                        DialogManager.showDialog(context, e.toString(), DialogType.error);
-                      }
-                    }
-                  },
-                  child: const Text('Sign in with Google'),
-                ),
+                // TextButton(
+                //   onPressed: () async {
+                //     try {
+                //       await googleSignIn();
+                //       if (context.mounted) {
+                //         Navigator.pushReplacement(
+                //           context,
+                //           MaterialPageRoute(builder: (context) => const HomeScreen()),
+                //         );
+                //       }
+                //     } on AuthException catch (e) {
+                //       if (context.mounted) {
+                //         DialogManager.showDialog(context, e.message, DialogType.error);
+                //       }
+                //     } catch (e) {
+                //       if (context.mounted) {
+                //         DialogManager.showDialog(context, e.toString(), DialogType.error);
+                //       }
+                //     }
+                //   },
+                //   child: const Text('Sign in with Google'),
+                // ),
                 TextButton(
                   onPressed: () {
                     pageController.animateToPage(
