@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -19,6 +20,7 @@ class DomainCard extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final veilnet = ref.watch(veilnetNotifierProvider);
     final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
+    final isBusy = useState(false);
 
     String countryCodeToFlagEmoji(String countryCode) {
       if (countryCode.length != 2) return '';
@@ -32,7 +34,7 @@ class DomainCard extends HookConsumerWidget {
 
     Future<void> connect() async {
       try {
-        // isBusy.value = true;
+        isBusy.value = true;
         final api = ref.read(apiProvider);
         final response = await api.get('/auth/token');
         final anchorToken = response.data['access_token'];
@@ -54,7 +56,7 @@ class DomainCard extends HookConsumerWidget {
           );
         }
       } finally {
-        // isBusy.value = false;
+        isBusy.value = false;
         ref.invalidate(riftProvider(public));
         ref.invalidate(portalProvider(public));
       }
@@ -86,14 +88,14 @@ class DomainCard extends HookConsumerWidget {
                 ),
                 trailing: FilledButton.icon(
                   onPressed:
-                      veilnet.isConnected || veilnet.isBusy
+                      veilnet.isConnected || veilnet.isBusy || isBusy.value
                           ? null
                           : () async {
                             await connect();
                           },
                   icon: Icon(Icons.power_settings_new),
                   label:
-                      veilnet.isBusy
+                      veilnet.isBusy || isBusy.value
                           ? SizedBox(
                             width: 20,
                             height: 20,

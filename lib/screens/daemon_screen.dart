@@ -31,39 +31,39 @@ class DaemonScreen extends HookConsumerWidget {
                 child: Row(
                   children: [
                     // Status Indicator
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: veilnet.isRunning ? Colors.green : Colors.red,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      veilnet.isRunning ? 'Daemon Running' : 'Daemon Stopped',
-                      style: Theme.of(context).textTheme.titleMedium,
-                    ),
-                    const Spacer(),
-                    // Control Buttons
-                    if (!veilnet.isRunning)
-                      FilledButton.icon(
-                        onPressed:
-                            () => ref.read(veilnetNotifierProvider.notifier).startDaemon(),
-                        icon: const Icon(Icons.play_arrow),
-                        label: const Text('Start'),
-                      )
-                    else
-                      FilledButton.icon(
-                        onPressed:
-                            () => ref.read(veilnetNotifierProvider.notifier).stopDaemon(),
-                        icon: const Icon(Icons.stop),
-                        label: const Text('Stop'),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    const SizedBox(width: 8),
+                    // Container(
+                    //   width: 12,
+                    //   height: 12,
+                    //   decoration: BoxDecoration(
+                    //     shape: BoxShape.circle,
+                    //     color: veilnet.isRunning ? Colors.green : Colors.red,
+                    //   ),
+                    // ),
+                    // const SizedBox(width: 8),
+                    // Text(
+                    //   veilnet.isRunning ? 'Daemon Running' : 'Daemon Stopped',
+                    //   style: Theme.of(context).textTheme.titleMedium,
+                    // ),
+                    // const Spacer(),
+                    // // Control Buttons
+                    // if (!veilnet.isRunning)
+                    //   FilledButton.icon(
+                    //     onPressed:
+                    //         () => ref.read(veilnetNotifierProvider.notifier).startDaemon(),
+                    //     icon: const Icon(Icons.play_arrow),
+                    //     label: const Text('Start'),
+                    //   )
+                    // else
+                    //   FilledButton.icon(
+                    //     onPressed:
+                    //         () => ref.read(veilnetNotifierProvider.notifier).stopDaemon(),
+                    //     icon: const Icon(Icons.stop),
+                    //     label: const Text('Stop'),
+                    //     style: FilledButton.styleFrom(
+                    //       backgroundColor: Theme.of(context).colorScheme.error,
+                    //     ),
+                    //   ),
+                    // const SizedBox(width: 8),
                     IconButton(
                       onPressed:
                           () => ref.read(veilnetNotifierProvider.notifier).clearLogs(),

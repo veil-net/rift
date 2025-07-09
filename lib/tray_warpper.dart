@@ -1,10 +1,9 @@
 import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:tray_manager/tray_manager.dart';
 import 'package:window_manager/window_manager.dart';
-
-import 'providers/veilnet_provider.dart';
 
 class TrayWrapper extends StatefulHookConsumerWidget {
   final Widget child;
@@ -37,7 +36,6 @@ class _TrayWrapperState extends ConsumerState<TrayWrapper>
         ],
       ),
     );
-    await ref.read(veilnetNotifierProvider.notifier).startDaemon();
   }
 
   @override
@@ -63,7 +61,6 @@ class _TrayWrapperState extends ConsumerState<TrayWrapper>
       case 'exit':
         await trayManager.destroy();
         await windowManager.destroy();
-        await ref.read(veilnetNotifierProvider.notifier).stopDaemon();
         break;
     }
   }

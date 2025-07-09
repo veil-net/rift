@@ -2,7 +2,6 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
@@ -25,7 +24,7 @@ class IpcResult {
 }
 
 class VeilNetState {
-  final bool isRunning;
+  // final bool isRunning;
   final bool isConnected;
   final bool isBusy;
   final List<String> logs;
@@ -37,7 +36,7 @@ class VeilNetState {
   final bool? public;
 
   VeilNetState({
-    this.isRunning = false,
+    // this.isRunning = false,
     this.isConnected = false,
     this.isBusy = false,
     this.logs = const [],
@@ -50,7 +49,7 @@ class VeilNetState {
   });
 
   VeilNetState copyWith({
-    bool? isRunning,
+    // bool? isRunning,
     bool? isConnected,
     bool? isBusy,
     List<String>? logs,
@@ -62,7 +61,7 @@ class VeilNetState {
     bool? public,
   }) {
     return VeilNetState(
-      isRunning: isRunning ?? this.isRunning,
+      // isRunning: isRunning ?? this.isRunning,
       isConnected: isConnected ?? this.isConnected,
       isBusy: isBusy ?? this.isBusy,
       logs: logs ?? this.logs,
@@ -125,34 +124,36 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
     );
     await fetchState(state.public ?? false);
     state = state.copyWith(isBusy: false);
-    _stateCheckTimer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+    _stateCheckTimer = Timer.periodic(const Duration(seconds: 5), (
+      timer,
+    ) async {
       await fetchState(state.public ?? false);
     });
   }
 
   Future<void> fetchState(bool public) async {
-    try{
-    final riftDetails =
-        public
-            ? await supabase
-                .from('public_rift_details')
-                .select('*')
-                .eq('name', state.anchorName ?? '')
-            : await supabase
-                .from('private_rift_details')
-                .select('*')
-                .eq('name', state.anchorName ?? '');
+    try {
+      final riftDetails =
+          public
+              ? await supabase
+                  .from('public_rift_details')
+                  .select('*')
+                  .eq('name', state.anchorName ?? '')
+              : await supabase
+                  .from('private_rift_details')
+                  .select('*')
+                  .eq('name', state.anchorName ?? '');
 
-    if (riftDetails.isNotEmpty) {
-      state = state.copyWith(
-        isConnected: true,
-        anchorID: riftDetails.first['id'],
-        domain: riftDetails.first['domain'],
-        region: riftDetails.first['region'],
-      );
-    } else {
-      state = state.copyWith(isConnected: false);
-    }
+      if (riftDetails.isNotEmpty) {
+        state = state.copyWith(
+          isConnected: true,
+          anchorID: riftDetails.first['id'],
+          domain: riftDetails.first['domain'],
+          region: riftDetails.first['region'],
+        );
+      } else {
+        state = state.copyWith(isConnected: false);
+      }
     } catch (e) {
       log('Failed to fetch state', error: e);
     }
@@ -228,115 +229,115 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
     });
   }
 
-  Future<void> startDaemon() async {
-    if (state.isRunning) return;
+  // Future<void> startDaemon() async {
+  //   if (state.isRunning) return;
 
-    try {
-      switch (Platform.operatingSystem) {
-        case "windows":
-          final byteData = await rootBundle.load(
-            'assets/bin/veilnet-daemon-windows',
-          );
-          final tempDir = await getTemporaryDirectory();
-          final file = File('${tempDir.path}/veilnet-daemon');
-          await file.writeAsBytes(byteData.buffer.asUint8List());
-          final process = await Process.start(file.path, []);
-          process.stdout
-              .transform(utf8.decoder)
-              .listen(
-                (line) =>
-                    state = state.copyWith(
-                      logs: [...state.logs, stripAnsiColors(line)],
-                    ),
-              );
-          process.stderr
-              .transform(utf8.decoder)
-              .listen(
-                (line) =>
-                    state = state.copyWith(
-                      logs: [...state.logs, stripAnsiColors(line)],
-                    ),
-              );
-          state = state.copyWith(isRunning: true, process: process);
-          break;
-        case "linux":
-        case "macos":
-        case "android":
-          state = state.copyWith(isRunning: true);
-          break;
-        default:
-          throw Exception('Unsupported platform: ${Platform.operatingSystem}');
-      }
-    } catch (e) {
-      log('Failed to start daemon', error: e);
-    }
-  }
+  //   try {
+  //     switch (Platform.operatingSystem) {
+  //       case "windows":
+  //         final byteData = await rootBundle.load(
+  //           'assets/bin/veilnet-daemon-windows',
+  //         );
+  //         final tempDir = await getTemporaryDirectory();
+  //         final file = File('${tempDir.path}/veilnet-daemon');
+  //         await file.writeAsBytes(byteData.buffer.asUint8List());
+  //         final process = await Process.start(file.path, []);
+  //         process.stdout
+  //             .transform(utf8.decoder)
+  //             .listen(
+  //               (line) =>
+  //                   state = state.copyWith(
+  //                     logs: [...state.logs, stripAnsiColors(line)],
+  //                   ),
+  //             );
+  //         process.stderr
+  //             .transform(utf8.decoder)
+  //             .listen(
+  //               (line) =>
+  //                   state = state.copyWith(
+  //                     logs: [...state.logs, stripAnsiColors(line)],
+  //                   ),
+  //             );
+  //         state = state.copyWith(isRunning: true, process: process);
+  //         break;
+  //       case "linux":
+  //       case "macos":
+  //       case "android":
+  //         state = state.copyWith(isRunning: true);
+  //         break;
+  //       default:
+  //         throw Exception('Unsupported platform: ${Platform.operatingSystem}');
+  //     }
+  //   } catch (e) {
+  //     log('Failed to start daemon', error: e);
+  //   }
+  // }
 
-  Future<void> stopDaemon() async {
-    if (!state.isRunning) return;
-    try {
-      state.process?.kill();
-      state = state.copyWith(
-        isRunning: false,
-        process: null,
-        isConnected: false,
-        anchorName: null,
-      );
-    } catch (e) {
-      log('Failed to stop daemon', error: e);
-    }
-  }
+  // Future<void> stopDaemon() async {
+  //   if (!state.isRunning) return;
+  //   try {
+  //     state.process?.kill();
+  //     state = state.copyWith(
+  //       isRunning: false,
+  //       process: null,
+  //       isConnected: false,
+  //       anchorName: null,
+  //     );
+  //   } catch (e) {
+  //     log('Failed to stop daemon', error: e);
+  //   }
+  // }
 
   void clearLogs() => state = state.copyWith(logs: []);
 
-  Future<IpcResult> sendIpcRequest(MessageType type, Uint8List body) async {
-    final socket = await Socket.connect('127.0.0.1', 3000);
-    final completer = Completer<IpcResult>();
-    final buffer = BytesBuilder();
+  // Future<IpcResult> sendIpcRequest(MessageType type, Uint8List body) async {
+  //   final socket = await Socket.connect('127.0.0.1', 3000);
+  //   final completer = Completer<IpcResult>();
+  //   final buffer = BytesBuilder();
 
-    final header = Header(type: type, version: 1, length: body.length);
-    final headerBytes = header.writeToBuffer();
-    final preHeader = ByteData(4)..setUint32(0, headerBytes.length);
-    final payload = preHeader.buffer.asUint8List() + headerBytes + body;
-    socket.add(payload);
+  //   final header = Header(type: type, version: 1, length: body.length);
+  //   final headerBytes = header.writeToBuffer();
+  //   final preHeader = ByteData(4)..setUint32(0, headerBytes.length);
+  //   final payload = preHeader.buffer.asUint8List() + headerBytes + body;
+  //   socket.add(payload);
 
-    socket.listen(
-      (chunk) {
-        buffer.add(chunk);
-        final data = buffer.toBytes();
-        if (data.length < 4) return;
-        final headerLen = ByteData.sublistView(data, 0, 4).getUint32(0);
-        if (data.length < 4 + headerLen) return;
-        final responseHeader = Header.fromBuffer(
-          data.sublist(4, 4 + headerLen),
-        );
-        final totalLen = 4 + headerLen + responseHeader.length;
-        if (data.length < totalLen) return;
-        final bodyBytes = data.sublist(4 + headerLen, totalLen);
-        completer.complete(
-          IpcResult(responseHeader, IpcResponse.fromBuffer(bodyBytes)),
-        );
-        socket.destroy();
-      },
-      onError: (err) {
-        socket.destroy();
-        completer.completeError(Exception('Socket error: $err'));
-      },
-      onDone: () {
-        if (!completer.isCompleted) {
-          completer.completeError(Exception('Socket closed prematurely'));
-        }
-      },
-    );
+  //   socket.listen(
+  //     (chunk) {
+  //       buffer.add(chunk);
+  //       final data = buffer.toBytes();
+  //       if (data.length < 4) return;
+  //       final headerLen = ByteData.sublistView(data, 0, 4).getUint32(0);
+  //       if (data.length < 4 + headerLen) return;
+  //       final responseHeader = Header.fromBuffer(
+  //         data.sublist(4, 4 + headerLen),
+  //       );
+  //       final totalLen = 4 + headerLen + responseHeader.length;
+  //       if (data.length < totalLen) return;
+  //       final bodyBytes = data.sublist(4 + headerLen, totalLen);
+  //       completer.complete(
+  //         IpcResult(responseHeader, IpcResponse.fromBuffer(bodyBytes)),
+  //       );
+  //       socket.destroy();
+  //     },
+  //     onError: (err) {
+  //       socket.destroy();
+  //       completer.completeError(Exception('Socket error: $err'));
+  //     },
+  //     onDone: () {
+  //       if (!completer.isCompleted) {
+  //         completer.completeError(Exception('Socket closed prematurely'));
+  //       }
+  //     },
+  //   );
 
-    return completer.future.timeout(
-      const Duration(seconds: 30),
-      onTimeout: () {
-        socket.destroy();
-        throw Exception('IPC response timeout');
-      },
-    );
-  }
+  //   return completer.future.timeout(
+  //     const Duration(seconds: 30),
+  //     onTimeout: () {
+  //       socket.destroy();
+  //       throw Exception('IPC response timeout');
+  //     },
+  //   );
+  // }
 
   Future<void> connect(
     String apiBaseUrl,
@@ -357,24 +358,51 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
       );
       switch (Platform.operatingSystem) {
         case "windows":
-          if (!state.isRunning || state.isConnected) {
-            throw Exception('Daemon is not running, or already connected');
+          if (state.isConnected) {
+            throw Exception('Already connected');
           }
-          final request = IpcStart(
-            apiBaseUrl: apiBaseUrl,
-            anchorToken: anchorToken,
-            anchorName: anchorName,
-            domainName: domainName,
-            region: region,
-            public: public,
+          final byteData = await rootBundle.load(
+            'assets/bin/windows/veilnet-daemon',
           );
-          final result = await sendIpcRequest(
-            MessageType.IPC_START,
-            request.writeToBuffer(),
-          );
-          if (result.header.type != MessageType.IPC_ACK) {
-            throw Exception(result.response.response);
+          final tempDir = await getTemporaryDirectory();
+          final file = File('${tempDir.path}/veilnet-daemon');
+          await file.writeAsBytes(byteData.buffer.asUint8List());
+          final arguments = [
+            'connect',
+            '-g',
+            'https://guardian.veilnet.org',
+            '-t',
+            anchorToken,
+            '-n',
+            anchorName,
+            '-d',
+            domainName,
+            '-r',
+            region,
+          ];
+          if (public) {
+            arguments.add('--public=true');
+          } else {
+            arguments.add('--public=false');
           }
+          final process = await Process.start(file.path, arguments);
+          process.stdout
+              .transform(utf8.decoder)
+              .listen(
+                (line) =>
+                    state = state.copyWith(
+                      logs: [...state.logs, stripAnsiColors(line)],
+                    ),
+              );
+          process.stderr
+              .transform(utf8.decoder)
+              .listen(
+                (line) =>
+                    state = state.copyWith(
+                      logs: [...state.logs, stripAnsiColors(line)],
+                    ),
+              );
+          state = state.copyWith(process: process);
           break;
 
         case "android":
@@ -423,18 +451,11 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
       state = state.copyWith(isBusy: true);
       switch (Platform.operatingSystem) {
         case "windows":
-          if (!state.isRunning || !state.isConnected) {
-            throw Exception('Daemon is not running, or not connected');
+          if (!state.isConnected) {
+            throw Exception('Not connected');
           }
-          final result = await sendIpcRequest(
-            MessageType.IPC_STOP,
-            IpcStop().writeToBuffer(),
-          );
-          if (result.header.type != MessageType.IPC_ACK) {
-            throw Exception(
-              'Failed to disconnect: ${result.response.response}',
-            );
-          }
+          state.process?.kill();
+          state = state.copyWith(process: null);
           break;
 
         case "android":

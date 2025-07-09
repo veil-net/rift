@@ -21,6 +21,7 @@ class DaemonStatusCard extends HookConsumerWidget {
     final userProfile = ref.watch(userProfileProvider);
     final publicPortals = ref.watch(portalProvider(true));
     final privatePortals = ref.watch(portalProvider(false));
+    final isBusy = useState(false);
 
     useEffect(() {
       final timer = Timer.periodic(const Duration(seconds: 10), (timer) {
@@ -201,7 +202,7 @@ class DaemonStatusCard extends HookConsumerWidget {
                   ),
                 ],
               ),
-              veilnet.isBusy
+              veilnet.isBusy || isBusy.value
                   ? ListTile(
                     leading: const CircularProgressIndicator(),
                     title: Text(
@@ -233,22 +234,27 @@ class DaemonStatusCard extends HookConsumerWidget {
                         ),
                         const SizedBox(width: 8),
                         IconButton(
-                          onPressed: () async {
-                            try {
-                              await veilnetNotifier.disconnect();
-                            } catch (e) {
-                              if (context.mounted) {
-                                DialogManager.showDialog(
-                                  context,
-                                  'Failed to disconnect from domain: $e',
-                                  DialogType.error,
-                                );
-                              }
-                            } finally {
-                              ref.invalidate(riftProvider(true));
-                              ref.invalidate(riftProvider(false));
-                            }
-                          },
+                          onPressed:
+                              veilnet.isBusy || isBusy.value
+                                  ? null
+                                  : () async {
+                                    try {
+                                      isBusy.value = true;
+                                      await veilnetNotifier.disconnect();
+                                    } catch (e) {
+                                      if (context.mounted) {
+                                        DialogManager.showDialog(
+                                          context,
+                                          'Failed to disconnect from domain: $e',
+                                          DialogType.error,
+                                        );
+                                      }
+                                    } finally {
+                                      ref.invalidate(riftProvider(true));
+                                      ref.invalidate(riftProvider(false));
+                                      isBusy.value = false;
+                                    }
+                                  },
                           icon: const Icon(
                             Icons.power_settings_new,
                             color: Colors.red,
