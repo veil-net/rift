@@ -381,10 +381,9 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
             region,
           ];
           if (public) {
-            arguments.add('--public=true');
-          } else {
-            arguments.add('--public=false');
+            arguments.add('-p');
           }
+
           final process = await Process.start(file.path, arguments);
           process.stdout
               .transform(utf8.decoder)
@@ -454,7 +453,7 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
           if (!state.isConnected) {
             throw Exception('Not connected');
           }
-          state.process?.kill();
+          state.process?.kill(ProcessSignal.sigterm);
           state = state.copyWith(process: null);
           break;
 

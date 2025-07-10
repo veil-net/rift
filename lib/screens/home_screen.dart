@@ -90,13 +90,6 @@ class HomeScreen extends HookConsumerWidget {
                                   selectedSegment: selectedSegment,
                                 ),
                                 const SizedBox(height: 8),
-                                RegionFilter(
-                                  selectedSegment: selectedSegment,
-                                  publicDomains: publicDomains,
-                                  privateDomains: privateDomains,
-                                  selectedRegions: selectedRegions,
-                                ),
-                                const SizedBox(height: 8),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
