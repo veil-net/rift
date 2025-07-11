@@ -20,6 +20,7 @@ class DomainCard extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final veilnet = ref.watch(veilnetNotifierProvider);
     final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
+    final anchorToken = ref.watch(anchorTokenProvider.future);
     final isBusy = useState(false);
 
     String countryCodeToFlagEmoji(String countryCode) {
@@ -36,12 +37,10 @@ class DomainCard extends HookConsumerWidget {
       try {
         isBusy.value = true;
         final api = ref.read(apiProvider);
-        final response = await api.get('/auth/token');
-        final anchorToken = response.data['access_token'];
 
         await veilnetNotifier.connect(
           api.options.baseUrl,
-          anchorToken,
+          await anchorToken,
           Uuid().v4(),
           domain.name,
           domain.region,
