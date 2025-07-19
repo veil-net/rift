@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:rift/providers/conflux_provider.dart';
 
-import '../providers/portal_provider.dart';
 import 'glass_card.dart';
 
 class PortalCard extends HookConsumerWidget {
-  final Portal portal;
-  final bool isPublic;
-  const PortalCard({super.key, required this.portal, required this.isPublic});
+  final Conflux conflux;
+  const PortalCard({super.key, required this.conflux});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -17,28 +16,28 @@ class PortalCard extends HookConsumerWidget {
         children: [
           ListTile(
             leading:
-                portal.online
+                conflux.signature != null
                     ? Icon(Icons.check_circle, color: Colors.green)
                     : Icon(
                       Icons.offline_bolt,
                       color: Theme.of(context).colorScheme.error,
                     ),
             title: Text(
-              portal.name,
+              conflux.name,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
             subtitle: Text(
-              portal.tag ?? '',
+              conflux.tag ?? '',
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                 color: Theme.of(context).colorScheme.secondary,
               ),
             ),
             trailing:
-                portal.online
+                conflux.signature != null
                     ? Text(
-                      portal.cidr ?? '',
+                      conflux.cidr ?? '',
                       style: Theme.of(context).textTheme.titleSmall?.copyWith(
                         color: Theme.of(context).colorScheme.secondary,
                       ),

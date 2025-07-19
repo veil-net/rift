@@ -1,26 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:rift/providers/plane_provider.dart';
+import 'package:rift/providers/veilnet_provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../providers/api_provider.dart';
-import '../providers/domain_provider.dart';
-import '../providers/portal_provider.dart';
-import '../providers/rift_provider.dart';
-import '../providers/veilnet_provider.dart';
 import 'dialog.dart';
 import 'glass_card.dart';
 
-class DomainCard extends HookConsumerWidget {
-  final Domain domain;
-  final bool public;
-  const DomainCard({super.key, required this.domain, required this.public});
+class PlaneCard extends HookConsumerWidget {
+  final Plane plane;
+  const PlaneCard({super.key, required this.plane});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final veilnet = ref.watch(veilnetNotifierProvider);
-    final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
-    final anchorToken = ref.watch(anchorTokenProvider.future);
+    final veilnet = ref.watch(veilnetProvider);
+    final veilnetNotifier = ref.watch(veilnetProvider.notifier);
     final isBusy = useState(false);
 
     String countryCodeToFlagEmoji(String countryCode) {
@@ -36,15 +31,10 @@ class DomainCard extends HookConsumerWidget {
     Future<void> connect() async {
       try {
         isBusy.value = true;
-        final api = ref.read(apiProvider);
 
         await veilnetNotifier.connect(
-          api.options.baseUrl,
-          await anchorToken,
           Uuid().v4(),
-          domain.name,
-          domain.region,
-          public,
+          plane.name,
         );
       } catch (e) {
         if (context.mounted) {
@@ -56,8 +46,6 @@ class DomainCard extends HookConsumerWidget {
         }
       } finally {
         isBusy.value = false;
-        ref.invalidate(riftProvider(public));
-        ref.invalidate(portalProvider(public));
       }
     }
 
@@ -70,17 +58,17 @@ class DomainCard extends HookConsumerWidget {
             children: [
               ListTile(
                 leading: Text(
-                  countryCodeToFlagEmoji(domain.region),
+                  countryCodeToFlagEmoji(plane.region),
                   style: TextStyle(fontSize: 24),
                 ),
                 title: Text(
-                  domain.name,
+                  plane.name,
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     color: Theme.of(context).colorScheme.primary,
                   ),
                 ),
                 subtitle: Text(
-                  domain.subnet,
+                  plane.subnet,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     color: Theme.of(context).colorScheme.secondary,
                   ),
@@ -103,113 +91,6 @@ class DomainCard extends HookConsumerWidget {
                           : const Text('Connect'),
                 ),
               ),
-              // const Divider(),
-              // Text(
-              //   'You connections:',
-              //   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-              //     color: Theme.of(context).colorScheme.primary,
-              //   ),
-              // ),
-              // const SizedBox(height: 8),
-              // Row(
-              //   children: [
-              //     Expanded(
-              //       child: GlassCard(
-              //         child: ListTile(
-              //           leading: Icon(
-              //             Icons.cyclone,
-              //             color: Theme.of(context).colorScheme.secondary,
-              //           ),
-              //           title: portals.when(
-              //             data:
-              //                 (data) => Text(
-              //                   '${data.where((portal) => portal.domain_id == domain.id && portal.online).length}/${data.where((portal) => portal.domain_id == domain.id).length}',
-              //                   style: Theme.of(
-              //                     context,
-              //                   ).textTheme.titleMedium?.copyWith(
-              //                     color: Theme.of(context).colorScheme.primary,
-              //                   ),
-              //                 ),
-              //             error:
-              //                 (error, stack) => Text(
-              //                   'Error',
-              //                   style: Theme.of(
-              //                     context,
-              //                   ).textTheme.titleMedium?.copyWith(
-              //                     color: Theme.of(context).colorScheme.error,
-              //                   ),
-              //                 ),
-              //             loading:
-              //                 () => Text(
-              //                   'Loading...',
-              //                   style: Theme.of(
-              //                     context,
-              //                   ).textTheme.titleMedium?.copyWith(
-              //                     color: Theme.of(context).colorScheme.primary,
-              //                   ),
-              //                 ),
-              //           ),
-              //           subtitle: Text(
-              //             'Portals',
-              //             style: Theme.of(
-              //               context,
-              //             ).textTheme.titleSmall?.copyWith(
-              //               color: Theme.of(context).colorScheme.secondary,
-              //             ),
-              //           ),
-              //         ),
-              //       ),
-              //     ),
-              //     const SizedBox(width: 16),
-              //     Expanded(
-              //       child: GlassCard(
-              //         child: ListTile(
-              //           leading: Icon(
-              //             Icons.electric_bolt,
-              //             color: Theme.of(context).colorScheme.secondary,
-              //           ),
-              //           title: rifts.when(
-              //             data:
-              //                 (data) => Text(
-              //                   '${data.where((rift) => rift.domain_id == domain.id && rift.online).length}/${data.where((rift) => rift.domain_id == domain.id).length}',
-              //                   style: Theme.of(
-              //                     context,
-              //                   ).textTheme.titleMedium?.copyWith(
-              //                     color: Theme.of(context).colorScheme.primary,
-              //                   ),
-              //                 ),
-              //             error:
-              //                 (error, stack) => Text(
-              //                   'Error',
-              //                   style: Theme.of(
-              //                     context,
-              //                   ).textTheme.titleMedium?.copyWith(
-              //                     color: Theme.of(context).colorScheme.error,
-              //                   ),
-              //                 ),
-              //             loading:
-              //                 () => Text(
-              //                   'Loading...',
-              //                   style: Theme.of(
-              //                     context,
-              //                   ).textTheme.titleMedium?.copyWith(
-              //                     color: Theme.of(context).colorScheme.primary,
-              //                   ),
-              //                 ),
-              //           ),
-              //           subtitle: Text(
-              //             'Rifts',
-              //             style: Theme.of(
-              //               context,
-              //             ).textTheme.titleSmall?.copyWith(
-              //               color: Theme.of(context).colorScheme.secondary,
-              //             ),
-              //           ),
-              //         ),
-              //       ),
-              //     ),
-              //   ],
-              // ),
             ],
           ),
         ),

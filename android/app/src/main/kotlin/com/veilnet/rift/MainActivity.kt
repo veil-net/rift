@@ -40,12 +40,8 @@ class MainActivity : FlutterActivity() {
                         }
 
                         val serviceIntent = Intent(this, VeilNet::class.java).apply {
-                            putExtra("api_base_url", config["api_base_url"] as? String)
+                            putExtra("guardian_url", config["guardian_url"] as? String)
                             putExtra("anchor_token", config["anchor_token"] as? String)
-                            putExtra("anchor_name", config["anchor_name"] as? String)
-                            putExtra("domain", config["domain"] as? String)
-                            putExtra("region", config["region"] as? String)
-                            putExtra("public", config["public"] as? Boolean ?: false)
                         }
 
                         try {

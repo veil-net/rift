@@ -1,14 +1,13 @@
-import 'dart:io';
 import 'dart:ui';
+
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/main.dart';
+import 'package:rift/providers/user_provider.dart';
+import 'package:rift/providers/veilnet_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import '../providers/user_provider.dart';
-import '../providers/veilnet_provider.dart';
-import '../screens/daemon_screen.dart';
 import 'dialog.dart';
 
 class CustomAppBar extends HookConsumerWidget {
@@ -18,8 +17,8 @@ class CustomAppBar extends HookConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(userProvider);
     final userServiceTier = ref.watch(userServiceTierProvider);
-    final veilnet = ref.watch(veilnetNotifierProvider);
-    final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
+    final veilnet = ref.watch(veilnetProvider);
+    final veilnetNotifier = ref.watch(veilnetProvider.notifier);
 
     Future<void> logout() async {
       try {
@@ -146,21 +145,6 @@ class CustomAppBar extends HookConsumerWidget {
                 ),
               ),
             ),
-            if (!Platform.isAndroid)
-              IconButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const DaemonScreen(),
-                    ),
-                  );
-                },
-                icon: Icon(
-                  Icons.terminal,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-              ),
             IconButton(
               onPressed: logout,
               icon: Icon(

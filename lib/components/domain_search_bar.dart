@@ -1,22 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:rift/providers/portal_provider.dart';
-
-import '../providers/domain_provider.dart';
-import '../providers/rift_provider.dart';
+import 'package:rift/providers/plane_provider.dart';
 
 class DomainSearchBar extends HookConsumerWidget {
-  const DomainSearchBar({
-    super.key,
-    required this.searchController,
-    required this.selectedSegment,
-  });
-
-  final TextEditingController searchController;
-  final ValueNotifier<int> selectedSegment;
+  const DomainSearchBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final searchController = useTextEditingController();
+    final planeNameFilter = ref.watch(planeNameFilterProvider);
+
+    // Sync controller value to state
+    useEffect(() {
+      searchController.text = planeNameFilter;
+      return null;
+    }, [planeNameFilter]);
+
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: Row(
@@ -33,17 +33,16 @@ class DomainSearchBar extends HookConsumerWidget {
                 fillColor: Theme.of(context).colorScheme.surface.withAlpha(100),
               ),
               controller: searchController,
+              onChanged: (value) {
+                // Update state when text changes
+                ref.read(planeNameFilterProvider.notifier).state = value;
+              },
             ),
           ),
           const SizedBox(width: 16),
           IconButton(
             onPressed: () {
-              ref.invalidate(domainProvider(true));
-              ref.invalidate(domainProvider(false));
-              ref.invalidate(portalProvider(true));
-              ref.invalidate(portalProvider(false));
-              ref.invalidate(riftProvider(true));
-              ref.invalidate(riftProvider(false));
+              ref.invalidate(planesProvider);
             },
             icon: const Icon(Icons.refresh),
           ),

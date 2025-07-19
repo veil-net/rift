@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import '../components/auth_guard.dart';
-import '../components/custom_appbar.dart';
-import '../components/portal_card.dart';
-import '../providers/portal_provider.dart';
+import 'package:rift/components/auth_guard.dart';
+import 'package:rift/components/custom_appbar.dart';
+import 'package:rift/components/portal_card.dart';
+import 'package:rift/providers/conflux_provider.dart';
 
 class PortalScreen extends HookConsumerWidget {
   final bool isPublic;
@@ -11,7 +11,7 @@ class PortalScreen extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final portals = ref.watch(portalProvider(isPublic));
+    final confluxes = ref.watch(confluxesProvider);
 
     return AuthGuard(
       child: Scaffold(
@@ -37,7 +37,7 @@ class PortalScreen extends HookConsumerWidget {
                       ),
                     ),
                     Expanded(
-                      child: portals.when(
+                      child: confluxes.when(
                         data:
                             (data) => ListView.builder(
                               itemCount: data.length,
@@ -47,8 +47,7 @@ class PortalScreen extends HookConsumerWidget {
                                       vertical: 4.0,
                                     ),
                                     child: PortalCard(
-                                      portal: data[index],
-                                      isPublic: isPublic,
+                                      conflux: data[index],
                                     ),
                                   ),
                             ),

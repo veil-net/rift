@@ -1,3 +1,4 @@
+// ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:async';
 import 'dart:convert';
 import 'dart:developer';
@@ -6,401 +7,157 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:rift/providers/api_provider.dart';
+import 'package:rift/providers/conflux_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-
-import '../main.dart';
-import '../veilnet.pb.dart';
-
-String stripAnsiColors(String text) =>
-    text.replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '');
 
 const _vpnChannel = MethodChannel('veilnet/channel');
 
-class IpcResult {
-  final Header header;
-  final IpcResponse response;
-
-  IpcResult(this.header, this.response);
-}
-
-class VeilNetState {
-  // final bool isRunning;
-  final bool isConnected;
-  final bool isBusy;
-  final List<String> logs;
+class VeilNet {
+  final String? name;
+  final String? plane;
+  final Conflux? conflux;
   final Process? process;
-  final String? anchorName;
-  final String? anchorID;
-  final String? domain;
-  final String? region;
-  final bool? public;
-
-  VeilNetState({
-    // this.isRunning = false,
-    this.isConnected = false,
-    this.isBusy = false,
-    this.logs = const [],
+  final bool isBusy;
+  VeilNet({
+    this.name,
+    this.plane,
+    this.conflux,
     this.process,
-    this.anchorName,
-    this.anchorID,
-    this.domain,
-    this.region,
-    this.public,
+    required this.isBusy,
   });
 
-  VeilNetState copyWith({
-    // bool? isRunning,
-    bool? isConnected,
-    bool? isBusy,
-    List<String>? logs,
+  VeilNet copyWith({
+    String? name,
+    String? plane,
+    Conflux? conflux,
     Process? process,
-    String? anchorName,
-    String? anchorID,
-    String? domain,
-    String? region,
-    bool? public,
+    bool? isBusy,
   }) {
-    return VeilNetState(
-      // isRunning: isRunning ?? this.isRunning,
-      isConnected: isConnected ?? this.isConnected,
-      isBusy: isBusy ?? this.isBusy,
-      logs: logs ?? this.logs,
+    return VeilNet(
+      name: name ?? this.name,
+      plane: plane ?? this.plane,
+      conflux: conflux ?? this.conflux,
       process: process ?? this.process,
-      anchorName: anchorName ?? this.anchorName,
-      anchorID: anchorID ?? this.anchorID,
-      domain: domain ?? this.domain,
-      region: region ?? this.region,
-      public: public ?? this.public,
+      isBusy: isBusy ?? this.isBusy,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {'anchorName': anchorName};
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{'name': name, 'plane': plane, 'isBusy': isBusy};
   }
 
-  factory VeilNetState.fromJson(Map<String, dynamic> json) {
-    return VeilNetState(anchorName: json['anchorName']);
+  factory VeilNet.fromMap(Map<String, dynamic> map) {
+    return VeilNet(
+      name: map['name'] != null ? map['name'] as String : null,
+      plane: map['plane'] != null ? map['plane'] as String : null,
+      isBusy: map['isBusy'] as bool,
+    );
   }
+
+  String toJson() => json.encode(toMap());
+
+  factory VeilNet.fromJson(String source) =>
+      VeilNet.fromMap(json.decode(source) as Map<String, dynamic>);
+
+  @override
+  String toString() {
+    return 'VeilNet(name: $name, plane: $plane, conflux: $conflux, process: $process, isBusy: $isBusy)';
+  }
+
+  @override
+  bool operator ==(covariant VeilNet other) {
+    if (identical(this, other)) return true;
+
+    return other.name == name && other.plane == plane;
+  }
+
+  @override
+  int get hashCode {
+    return name.hashCode ^ plane.hashCode;
+  }
+
+  bool get isConnected => conflux != null && conflux!.signature != null;
 }
 
-class VeilNetNotifier extends StateNotifier<VeilNetState> {
-  Timer? _stateCheckTimer;
-
-  VeilNetNotifier() : super(VeilNetState()) {
+class VeilNetNotifier extends StateNotifier<VeilNet> {
+  final Ref ref;
+  Timer? _timer;
+  VeilNetNotifier(this.ref) : super(VeilNet(isBusy: false)) {
     _loadState();
+  }
+
+  Future<void> _loadState() async {
+    // Load name and plane from prefs
+    final prefs = await SharedPreferences.getInstance();
+    final name = prefs.getString('name');
+    final plane = prefs.getString('plane');
+    state = state.copyWith(name: name, plane: plane);
+
+    // Load conflux from provider
+    if (name != null && plane != null) {
+      ref.invalidate(confluxProvider((name, plane)));
+      final conflux = await ref.read(confluxProvider((name, plane)).future);
+      state = state.copyWith(conflux: conflux);
+    }
+
+    // Start timer to refresh conflux every 5 seconds
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      if (state.name != null && state.plane != null) {
+        ref.invalidate(confluxProvider((state.name!, state.plane!)));
+        final conflux = await ref.read(
+          confluxProvider((state.name!, state.plane!)).future,
+        );
+        if (state.conflux != conflux) {
+          state = state.copyWith(conflux: conflux);
+          if (state.isBusy) {
+            state = state.copyWith(isBusy: false);
+          }
+        }
+      }
+    });
   }
 
   @override
   void dispose() {
-    _stateCheckTimer?.cancel();
+    _timer?.cancel();
     super.dispose();
   }
 
-  Future<void> _loadState() async {
-    // Load state from prefs
-    final prefs = await SharedPreferences.getInstance();
-    final anchorName = prefs.getString('anchorName');
-    final public = prefs.getBool('public');
-
-    // If anchorName or public is null, set state to disconnected
-    if (anchorName == null || public == null) {
-      state = state.copyWith(
-        anchorName: null,
-        anchorID: null,
-        domain: null,
-        region: null,
-        public: null,
-        isConnected: false,
-        isBusy: false,
-      );
-      return;
+  Future<void> connect(String name, String plane) async {
+    if (state.isBusy) {
+      throw Exception('Daemon is busy, please wait for it to finish');
     }
 
-    // Start checking state from supabase
-    state = state.copyWith(
-      anchorName: anchorName,
-      public: public,
-      isBusy: true,
-    );
-    await fetchState(state.public ?? false);
-    state = state.copyWith(isBusy: false);
-    _stateCheckTimer = Timer.periodic(const Duration(seconds: 5), (
-      timer,
-    ) async {
-      await fetchState(state.public ?? false);
-    });
-  }
-
-  Future<void> fetchState(bool public) async {
-    try {
-      final riftDetails =
-          public
-              ? await supabase
-                  .from('public_rift_details')
-                  .select('*')
-                  .eq('name', state.anchorName ?? '')
-              : await supabase
-                  .from('private_rift_details')
-                  .select('*')
-                  .eq('name', state.anchorName ?? '');
-
-      if (riftDetails.isNotEmpty) {
-        state = state.copyWith(
-          isConnected: true,
-          anchorID: riftDetails.first['id'],
-          domain: riftDetails.first['domain'],
-          region: riftDetails.first['region'],
-        );
-      } else {
-        state = state.copyWith(isConnected: false);
-      }
-    } catch (e) {
-      log('Failed to fetch state', error: e);
+    if (state.isConnected) {
+      throw Exception('Please disconnect first');
     }
-  }
 
-  Future<void> _saveState() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('anchorName', state.anchorName ?? '');
-    await prefs.setBool('public', state.public ?? false);
-  }
+    state = state.copyWith(isBusy: true);
 
-  Future<void> _fetchStateAfterConnect() async {
-    final startAt = DateTime.now();
-    Timer.periodic(const Duration(seconds: 3), (timer) async {
-      final riftDetails =
-          state.public!
-              ? await supabase
-                  .from('public_rift_details')
-                  .select('*')
-                  .eq('name', state.anchorName ?? '')
-              : await supabase
-                  .from('private_rift_details')
-                  .select('*')
-                  .eq('name', state.anchorName ?? '');
-
-      if (riftDetails.isNotEmpty) {
-        state = state.copyWith(
-          isConnected: true,
-          isBusy: false,
-          anchorID: riftDetails.first['id'],
-          domain: riftDetails.first['domain'],
-          region: riftDetails.first['region'],
-        );
-        timer.cancel();
-      }
-
-      if (DateTime.now().difference(startAt).inSeconds > 30) {
-        state = state.copyWith(isBusy: false);
-        timer.cancel();
-      }
-    });
-  }
-
-  Future<void> _fetchStateAfterDisconnect() async {
-    final startAt = DateTime.now();
-    Timer.periodic(const Duration(seconds: 3), (timer) async {
-      final riftDetails =
-          state.public!
-              ? await supabase
-                  .from('public_rift_details')
-                  .select('*')
-                  .eq('name', state.anchorName ?? '')
-              : await supabase
-                  .from('private_rift_details')
-                  .select('*')
-                  .eq('name', state.anchorName ?? '');
-
-      if (riftDetails.isEmpty) {
-        state = state.copyWith(
-          isConnected: false,
-          isBusy: false,
-          anchorID: null,
-          domain: null,
-          region: null,
-        );
-        timer.cancel();
-      }
-
-      if (DateTime.now().difference(startAt).inSeconds > 30) {
-        state = state.copyWith(isBusy: false);
-        timer.cancel();
-      }
-    });
-  }
-
-  // Future<void> startDaemon() async {
-  //   if (state.isRunning) return;
-
-  //   try {
-  //     switch (Platform.operatingSystem) {
-  //       case "windows":
-  //         final byteData = await rootBundle.load(
-  //           'assets/bin/veilnet-daemon-windows',
-  //         );
-  //         final tempDir = await getTemporaryDirectory();
-  //         final file = File('${tempDir.path}/veilnet-daemon');
-  //         await file.writeAsBytes(byteData.buffer.asUint8List());
-  //         final process = await Process.start(file.path, []);
-  //         process.stdout
-  //             .transform(utf8.decoder)
-  //             .listen(
-  //               (line) =>
-  //                   state = state.copyWith(
-  //                     logs: [...state.logs, stripAnsiColors(line)],
-  //                   ),
-  //             );
-  //         process.stderr
-  //             .transform(utf8.decoder)
-  //             .listen(
-  //               (line) =>
-  //                   state = state.copyWith(
-  //                     logs: [...state.logs, stripAnsiColors(line)],
-  //                   ),
-  //             );
-  //         state = state.copyWith(isRunning: true, process: process);
-  //         break;
-  //       case "linux":
-  //       case "macos":
-  //       case "android":
-  //         state = state.copyWith(isRunning: true);
-  //         break;
-  //       default:
-  //         throw Exception('Unsupported platform: ${Platform.operatingSystem}');
-  //     }
-  //   } catch (e) {
-  //     log('Failed to start daemon', error: e);
-  //   }
-  // }
-
-  // Future<void> stopDaemon() async {
-  //   if (!state.isRunning) return;
-  //   try {
-  //     state.process?.kill();
-  //     state = state.copyWith(
-  //       isRunning: false,
-  //       process: null,
-  //       isConnected: false,
-  //       anchorName: null,
-  //     );
-  //   } catch (e) {
-  //     log('Failed to stop daemon', error: e);
-  //   }
-  // }
-
-  void clearLogs() => state = state.copyWith(logs: []);
-
-  // Future<IpcResult> sendIpcRequest(MessageType type, Uint8List body) async {
-  //   final socket = await Socket.connect('127.0.0.1', 3000);
-  //   final completer = Completer<IpcResult>();
-  //   final buffer = BytesBuilder();
-
-  //   final header = Header(type: type, version: 1, length: body.length);
-  //   final headerBytes = header.writeToBuffer();
-  //   final preHeader = ByteData(4)..setUint32(0, headerBytes.length);
-  //   final payload = preHeader.buffer.asUint8List() + headerBytes + body;
-  //   socket.add(payload);
-
-  //   socket.listen(
-  //     (chunk) {
-  //       buffer.add(chunk);
-  //       final data = buffer.toBytes();
-  //       if (data.length < 4) return;
-  //       final headerLen = ByteData.sublistView(data, 0, 4).getUint32(0);
-  //       if (data.length < 4 + headerLen) return;
-  //       final responseHeader = Header.fromBuffer(
-  //         data.sublist(4, 4 + headerLen),
-  //       );
-  //       final totalLen = 4 + headerLen + responseHeader.length;
-  //       if (data.length < totalLen) return;
-  //       final bodyBytes = data.sublist(4 + headerLen, totalLen);
-  //       completer.complete(
-  //         IpcResult(responseHeader, IpcResponse.fromBuffer(bodyBytes)),
-  //       );
-  //       socket.destroy();
-  //     },
-  //     onError: (err) {
-  //       socket.destroy();
-  //       completer.completeError(Exception('Socket error: $err'));
-  //     },
-  //     onDone: () {
-  //       if (!completer.isCompleted) {
-  //         completer.completeError(Exception('Socket closed prematurely'));
-  //       }
-  //     },
-  //   );
-
-  //   return completer.future.timeout(
-  //     const Duration(seconds: 30),
-  //     onTimeout: () {
-  //       socket.destroy();
-  //       throw Exception('IPC response timeout');
-  //     },
-  //   );
-  // }
-
-  Future<void> connect(
-    String apiBaseUrl,
-    String anchorToken,
-    String anchorName,
-    String domainName,
-    String region,
-    bool public,
-  ) async {
     try {
-      if (state.isBusy) {
-        throw Exception('Daemon is busy, please wait for it to finish');
-      }
-      state = state.copyWith(
-        isBusy: true,
-        anchorName: anchorName,
-        public: public,
+      // Get anchor token
+      final api = ref.read(apiProvider);
+      final response = await api.post(
+        '/conflux?conflux_name=$name&plane_name=$plane',
       );
+      final anchorToken = response.data;
+      log('Anchor token: $anchorToken');
+
       switch (Platform.operatingSystem) {
         case "windows":
-          if (state.isConnected) {
-            throw Exception('Already connected');
-          }
           final byteData = await rootBundle.load(
             'assets/bin/windows/veilnet-daemon',
           );
           final tempDir = await getTemporaryDirectory();
           final file = File('${tempDir.path}/veilnet-daemon');
           await file.writeAsBytes(byteData.buffer.asUint8List());
-          final arguments = [
-            'connect',
-            '-g',
-            'https://guardian.veilnet.org',
-            '-t',
-            anchorToken,
-            '-n',
-            anchorName,
-            '-d',
-            domainName,
-            '-r',
-            region,
-          ];
-          if (public) {
-            arguments.add('-p');
-          }
+          final arguments = ['-t', anchorToken];
 
-          final process = await Process.start(file.path, arguments);
-          process.stdout
-              .transform(utf8.decoder)
-              .listen(
-                (line) =>
-                    state = state.copyWith(
-                      logs: [...state.logs, stripAnsiColors(line)],
-                    ),
-              );
-          process.stderr
-              .transform(utf8.decoder)
-              .listen(
-                (line) =>
-                    state = state.copyWith(
-                      logs: [...state.logs, stripAnsiColors(line)],
-                    ),
-              );
+          final process = await Process.start(
+            file.path,
+            arguments as List<String>,
+          );
           state = state.copyWith(process: process);
           break;
 
@@ -418,12 +175,8 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
             'startVpnService',
             {
               'config': {
-                'api_base_url': apiBaseUrl,
+                'guardian_url': api.options.baseUrl,
                 'anchor_token': anchorToken,
-                'anchor_name': anchorName,
-                'domain': domainName,
-                'region': region,
-                'public': public,
               },
             },
           );
@@ -433,12 +186,10 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
           }
           break;
       }
+      state = state.copyWith(name: name, plane: plane);
     } catch (e) {
-      state = state.copyWith(isBusy: false, anchorName: null, public: null);
-      throw Exception('Failed to connect: $e');
-    } finally {
-      await _saveState();
-      await _fetchStateAfterConnect();
+      state = state.copyWith(isBusy: false);
+      rethrow;
     }
   }
 
@@ -446,6 +197,11 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
     if (state.isBusy) {
       throw Exception('Daemon is busy, please wait for it to finish');
     }
+
+    if (!state.isConnected) {
+      throw Exception('Already disconnected');
+    }
+
     try {
       state = state.copyWith(isBusy: true);
       switch (Platform.operatingSystem) {
@@ -468,15 +224,12 @@ class VeilNetNotifier extends StateNotifier<VeilNetState> {
           break;
       }
     } catch (e) {
-      throw Exception('Failed to disconnect: $e');
-    } finally {
-      await _saveState();
-      await _fetchStateAfterDisconnect();
+      state = state.copyWith(isBusy: false);
+      rethrow;
     }
   }
 }
 
-final veilnetNotifierProvider =
-    StateNotifierProvider<VeilNetNotifier, VeilNetState>((ref) {
-      return VeilNetNotifier();
-    });
+final veilnetProvider = StateNotifierProvider<VeilNetNotifier, VeilNet>((ref) {
+  return VeilNetNotifier(ref);
+});

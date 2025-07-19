@@ -2,13 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/glass_card.dart';
+import 'package:rift/providers/conflux_provider.dart';
+import 'package:rift/providers/user_provider.dart';
+import 'package:rift/providers/veilnet_provider.dart';
+import 'package:rift/screens/portal_screen.dart';
 import 'dart:async';
 
-import '../providers/rift_provider.dart';
-import '../providers/veilnet_provider.dart';
-import '../providers/portal_provider.dart';
-import '../screens/portal_screen.dart';
-import '../providers/user_provider.dart';
 import 'dialog.dart';
 
 class DaemonStatusCard extends HookConsumerWidget {
@@ -16,11 +15,10 @@ class DaemonStatusCard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final veilnet = ref.watch(veilnetNotifierProvider);
-    final veilnetNotifier = ref.watch(veilnetNotifierProvider.notifier);
+    final veilnet = ref.watch(veilnetProvider);
+    final veilnetNotifier = ref.watch(veilnetProvider.notifier);
     final userProfile = ref.watch(userProfileProvider);
-    final publicPortals = ref.watch(portalProvider(true));
-    final privatePortals = ref.watch(portalProvider(false));
+    final conflux = ref.watch(confluxesProvider);
     final isBusy = useState(false);
 
     useEffect(() {
@@ -79,128 +77,67 @@ class DaemonStatusCard extends HookConsumerWidget {
               ),
               const Divider(),
               Text(
-                'Your Portals:',
+                'Your Confluxes:',
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
                   color: Theme.of(context).colorScheme.primary,
                 ),
               ),
               const SizedBox(height: 8),
-              Row(
-                children: [
-                  Expanded(
-                    child: GlassCard(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.cyclone,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                        title: publicPortals.when(
-                          data:
-                              (data) => Text(
-                                '${data.where((portal) => portal.online).length}/${data.length}',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                          error:
-                              (error, stack) => Text(
-                                'Error',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                          loading:
-                              () => Text(
-                                'Loading...',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                        ),
-                        subtitle: Text(
-                          'Public',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => PortalScreen(isPublic: true),
+              Expanded(
+                child: GlassCard(
+                  child: ListTile(
+                    leading: Icon(
+                      Icons.cyclone,
+                      color: Theme.of(context).colorScheme.secondary,
+                    ),
+                    title: conflux.when(
+                      data:
+                          (data) => Text(
+                            '${data.where((conflux) => conflux.signature != null).length}/${data.length}',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
                             ),
-                          );
-                        },
+                          ),
+                      error:
+                          (error, stack) => Text(
+                            'Error',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.error,
+                            ),
+                          ),
+                      loading:
+                          () => Text(
+                            'Loading...',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                    ),
+                    subtitle: Text(
+                      'Public',
+                      style: Theme.of(
+                        context,
+                      ).textTheme.titleSmall?.copyWith(
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                     ),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder:
+                              (context) => PortalScreen(isPublic: true),
+                        ),
+                      );
+                    },
                   ),
-                  const SizedBox(width: 16),
-                  Expanded(
-                    child: GlassCard(
-                      child: ListTile(
-                        leading: Icon(
-                          Icons.cyclone,
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                        title: privatePortals.when(
-                          data:
-                              (data) => Text(
-                                '${data.where((portal) => portal.online).length}/${data.length}',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                          error:
-                              (error, stack) => Text(
-                                'Error',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.error,
-                                ),
-                              ),
-                          loading:
-                              () => Text(
-                                'Loading...',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.titleMedium?.copyWith(
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                              ),
-                        ),
-                        subtitle: Text(
-                          'Private',
-                          style: Theme.of(
-                            context,
-                          ).textTheme.titleSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
-                          ),
-                        ),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder:
-                                  (context) => PortalScreen(isPublic: false),
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
               veilnet.isBusy || isBusy.value
                   ? ListTile(
@@ -225,7 +162,7 @@ class DaemonStatusCard extends HookConsumerWidget {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          veilnet.domain ?? 'Unknown',
+                          veilnet.conflux?.plane ?? 'Unknown',
                           style: Theme.of(
                             context,
                           ).textTheme.titleMedium?.copyWith(
@@ -250,8 +187,7 @@ class DaemonStatusCard extends HookConsumerWidget {
                                         );
                                       }
                                     } finally {
-                                      ref.invalidate(riftProvider(true));
-                                      ref.invalidate(riftProvider(false));
+                                      ref.invalidate(confluxesProvider);
                                       isBusy.value = false;
                                     }
                                   },

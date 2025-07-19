@@ -3,59 +3,25 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-
-import '../components/auth_guard.dart';
-import '../components/custom_appbar.dart';
-import '../components/glass_card.dart';
-import '../components/veilnet_status_card.dart';
-import '../components/domain_card.dart';
-import '../components/domain_region_filter.dart';
-import '../components/domain_search_bar.dart';
-import '../providers/domain_provider.dart';
-import '../providers/portal_provider.dart';
+import 'package:rift/components/auth_guard.dart';
+import 'package:rift/components/custom_appbar.dart';
+import 'package:rift/components/domain_card.dart';
+import 'package:rift/components/domain_region_filter.dart';
+import 'package:rift/components/domain_search_bar.dart';
+import 'package:rift/components/glass_card.dart';
+import 'package:rift/components/veilnet_status_card.dart';
+import 'package:rift/providers/plane_provider.dart';
 
 class HomeScreen extends HookConsumerWidget {
   const HomeScreen({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final publicDomains = ref.watch(domainProvider(true));
-    final privateDomains = ref.watch(domainProvider(false));
     final pageController = usePageController();
     final selectedSegment = useState(0);
-    final searchController = useTextEditingController();
-    useListenable(searchController);
-    final selectedRegions = useState<Set<String>>({});
-
-    useEffect(() {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (ModalRoute.of(context)?.isCurrent ?? false) {
-          ref.invalidate(domainProvider(true));
-          ref.invalidate(domainProvider(false));
-          ref.invalidate(portalProvider(true));
-          ref.invalidate(portalProvider(false));
-        }
-      });
-
-      return null;
-    }, [ModalRoute.of(context)]);
-
-    useEffect(() {
-      final regions =
-          selectedSegment.value == 0
-              ? publicDomains.value
-                      ?.map((d) => d.region.toUpperCase())
-                      .toSet() ??
-                  {}
-              : privateDomains.value
-                      ?.map((d) => d.region.toUpperCase())
-                      .toSet() ??
-                  {};
-      if (regions.isNotEmpty) {
-        selectedRegions.value = regions;
-      }
-      return null;
-    }, [publicDomains.value, privateDomains.value, selectedSegment.value]);
+    final planes = ref.watch(planesProvider);
+    final planeNameFilter = ref.watch(planeNameFilterProvider);
+    final planeRegionFilter = ref.watch(regionFilterProvider);
 
     return AuthGuard(
       child: SafeArea(
@@ -85,10 +51,7 @@ class HomeScreen extends HookConsumerWidget {
                             child: Column(
                               mainAxisSize: MainAxisSize.min,
                               children: [
-                                DomainSearchBar(
-                                  searchController: searchController,
-                                  selectedSegment: selectedSegment,
-                                ),
+                                DomainSearchBar(),
                                 const SizedBox(height: 8),
                                 Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
@@ -157,31 +120,24 @@ class HomeScreen extends HookConsumerWidget {
                               physics: const NeverScrollableScrollPhysics(),
                               children: [
                                 Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    publicDomains.when(
+                                    planes.when(
                                       data:
                                           (data) => ListView.builder(
                                             shrinkWrap: true,
                                             itemCount: data.length,
-                                            itemBuilder: (
-                                              context,
-                                              index,
-                                            ) {
+                                            itemBuilder: (context, index) {
                                               final domain = data[index];
-                                              if ((searchController
-                                                          .text
-                                                          .isEmpty ||
+                                              if ((planeNameFilter.isEmpty ||
                                                       data[index].name
                                                           .toLowerCase()
                                                           .contains(
-                                                            searchController
-                                                                .text
+                                                            planeNameFilter
                                                                 .toLowerCase(),
                                                           )) &&
-                                                  selectedRegions.value
+                                                  planeRegionFilter
                                                       .contains(
                                                         domain.region
                                                             .toUpperCase(),
@@ -191,9 +147,8 @@ class HomeScreen extends HookConsumerWidget {
                                                       const EdgeInsets.symmetric(
                                                         vertical: 8,
                                                       ),
-                                                  child: DomainCard(
-                                                    domain: data[index],
-                                                    public: true,
+                                                  child: PlaneCard(
+                                                    plane: data[index],
                                                   ),
                                                 );
                                               }
@@ -205,38 +160,30 @@ class HomeScreen extends HookConsumerWidget {
                                               Text(error.toString()),
                                       loading:
                                           () => const Center(
-                                            child:
-                                                CircularProgressIndicator(),
+                                            child: CircularProgressIndicator(),
                                           ),
                                     ),
                                   ],
                                 ),
                                 Column(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.center,
+                                  mainAxisAlignment: MainAxisAlignment.center,
                                   mainAxisSize: MainAxisSize.min,
                                   children: [
-                                    privateDomains.when(
+                                    planes.when(
                                       data:
                                           (data) => ListView.builder(
                                             shrinkWrap: true,
                                             itemCount: data.length,
-                                            itemBuilder: (
-                                              context,
-                                              index,
-                                            ) {
+                                            itemBuilder: (context, index) {
                                               final domain = data[index];
-                                              if ((searchController
-                                                          .text
-                                                          .isEmpty ||
+                                              if ((planeNameFilter.isEmpty ||
                                                       data[index].name
                                                           .toLowerCase()
                                                           .contains(
-                                                            searchController
-                                                                .text
+                                                            planeNameFilter
                                                                 .toLowerCase(),
                                                           )) &&
-                                                  selectedRegions.value
+                                                  planeRegionFilter
                                                       .contains(
                                                         domain.region
                                                             .toUpperCase(),
@@ -246,9 +193,8 @@ class HomeScreen extends HookConsumerWidget {
                                                       const EdgeInsets.symmetric(
                                                         vertical: 8,
                                                       ),
-                                                  child: DomainCard(
-                                                    domain: data[index],
-                                                    public: false,
+                                                  child: PlaneCard(
+                                                    plane: data[index],
                                                   ),
                                                 );
                                               }
@@ -260,8 +206,7 @@ class HomeScreen extends HookConsumerWidget {
                                               Text(error.toString()),
                                       loading:
                                           () => const Center(
-                                            child:
-                                                CircularProgressIndicator(),
+                                            child: CircularProgressIndicator(),
                                           ),
                                     ),
                                   ],
@@ -287,17 +232,9 @@ class HomeScreen extends HookConsumerWidget {
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
-                              DomainSearchBar(
-                                searchController: searchController,
-                                selectedSegment: selectedSegment,
-                              ),
+                              DomainSearchBar(),
                               const SizedBox(height: 8),
-                              RegionFilter(
-                                selectedSegment: selectedSegment,
-                                publicDomains: publicDomains,
-                                privateDomains: privateDomains,
-                                selectedRegions: selectedRegions,
-                              ),
+                              RegionFilter(),
                               const SizedBox(height: 8),
                               Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -358,23 +295,20 @@ class HomeScreen extends HookConsumerWidget {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     Expanded(
-                                      child: publicDomains.when(
+                                      child: planes.when(
                                         data:
                                             (data) => ListView.builder(
                                               itemCount: data.length,
                                               itemBuilder: (context, index) {
                                                 final domain = data[index];
-                                                if ((searchController
-                                                            .text
-                                                            .isEmpty ||
+                                                if ((planeNameFilter.isEmpty ||
                                                         data[index].name
                                                             .toLowerCase()
                                                             .contains(
-                                                              searchController
-                                                                  .text
+                                                              planeNameFilter
                                                                   .toLowerCase(),
                                                             )) &&
-                                                    selectedRegions.value
+                                                    planeRegionFilter
                                                         .contains(
                                                           domain.region
                                                               .toUpperCase(),
@@ -384,9 +318,8 @@ class HomeScreen extends HookConsumerWidget {
                                                         const EdgeInsets.symmetric(
                                                           vertical: 8,
                                                         ),
-                                                    child: DomainCard(
-                                                      domain: data[index],
-                                                      public: true,
+                                                    child: PlaneCard(
+                                                      plane: data[index],
                                                     ),
                                                   );
                                                 }
@@ -411,23 +344,20 @@ class HomeScreen extends HookConsumerWidget {
                                   mainAxisAlignment: MainAxisAlignment.start,
                                   children: [
                                     Expanded(
-                                      child: privateDomains.when(
+                                      child: planes.when(
                                         data:
                                             (data) => ListView.builder(
                                               itemCount: data.length,
                                               itemBuilder: (context, index) {
                                                 final domain = data[index];
-                                                if ((searchController
-                                                            .text
-                                                            .isEmpty ||
+                                                if ((planeNameFilter.isEmpty ||
                                                         data[index].name
                                                             .toLowerCase()
                                                             .contains(
-                                                              searchController
-                                                                  .text
+                                                              planeNameFilter
                                                                   .toLowerCase(),
                                                             )) &&
-                                                    selectedRegions.value
+                                                    planeRegionFilter
                                                         .contains(
                                                           domain.region
                                                               .toUpperCase(),
@@ -437,9 +367,8 @@ class HomeScreen extends HookConsumerWidget {
                                                         const EdgeInsets.symmetric(
                                                           vertical: 8,
                                                         ),
-                                                    child: DomainCard(
-                                                      domain: data[index],
-                                                      public: false,
+                                                    child: PlaneCard(
+                                                      plane: data[index],
                                                     ),
                                                   );
                                                 }

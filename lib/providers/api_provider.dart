@@ -21,9 +21,3 @@ final apiProvider = Provider<Dio>((ref) {
   );
   return dio;
 });
-
-final anchorTokenProvider = FutureProvider<String>((ref) async {
-  final api = ref.watch(apiProvider);
-  final response = await api.get('/auth/token');
-  return response.data['access_token'];
-});

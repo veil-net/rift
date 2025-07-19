@@ -52,23 +52,19 @@ class VeilNet : VpnService() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val apiBaseUrl = intent?.getStringExtra("api_base_url")
+        val guardianUrl = intent?.getStringExtra("guardian_url")
         val anchorToken = intent?.getStringExtra("anchor_token")
-        val anchorName = intent?.getStringExtra("anchor_name")
-        val domainName = intent?.getStringExtra("domain")
-        val region = intent?.getStringExtra("region")
-        val isPublic = intent?.getBooleanExtra("public", false) ?: false
 
-        if (apiBaseUrl == null || anchorToken == null || anchorName == null || domainName == null || region == null) {
-            Log.e("VeilNet", "Missing VPN config parameters")
+        if (guardianUrl == null || anchorToken == null) {
+            Log.e("VeilNet", "Guardian URL or anchor token is missing")
             stopSelf()
             return START_NOT_STICKY
         }
 
         vpnScope.launch {
             try {
-                anchor = Veilnet.newAnchor(false, isPublic)
-                anchor!!.start(apiBaseUrl, anchorToken, anchorName, domainName, region)
+                anchor = Veilnet.newAnchor()
+                anchor!!.start(guardianUrl, anchorToken, false)
             } catch (e: Exception) {
                 Log.e("VeilNet", "VPN start failed", e)
                 stopSelf()
