@@ -42,8 +42,18 @@ class StatusCard extends HookConsumerWidget {
                   veilNet.isBusy
                       ? LinearProgressIndicator()
                       : veilNet.isConnected
-                      ? Text(veilNet.conflux?.cidr ?? '')
-                      : Text('Please connect to a plane'),
+                      ? Text(
+                        veilNet.conflux?.cidr ?? '',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      )
+                      : Text(
+                        'Please connect to a plane',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.secondary,
+                        ),
+                      ),
               trailing:
                   veilNet.isBusy
                       ? null

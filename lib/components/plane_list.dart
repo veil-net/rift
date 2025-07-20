@@ -86,13 +86,19 @@ class PlaneCard extends HookConsumerWidget {
                 getFlagEmoji(plane.region),
                 style: TextStyle(fontSize: 24),
               ),
-              title: Text(plane.name),
-              subtitle: Text(plane.subnet),
+              title: Text(
+                plane.name,
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
+              subtitle: Text(
+                plane.subnet,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
               trailing: FilledButton(
                 onPressed:
-                    veilNet.isBusy ||
-                            veilNet.isConnected ||
-                            plane.portals == 0
+                    veilNet.isBusy || veilNet.isConnected || plane.portals == 0
                         ? null
                         : () {
                           connectToPlane(plane);

@@ -71,24 +71,27 @@ class PlaneSearchCard extends HookConsumerWidget {
                     (data) =>
                         data
                             .map(
-                              (region) => FilterChip(
-                                label: Text(getFlagEmoji(region)),
-                                selected: regionFilter.contains(region),
-                                onSelected: (value) {
-                                  ref
-                                      .read(regionFilterProvider.notifier)
-                                      .state = ref
-                                              .read(regionFilterProvider)
-                                              .contains(region)
-                                          ? ref
-                                              .read(regionFilterProvider)
-                                              .where((r) => r != region)
-                                              .toList()
-                                          : [
-                                            ...ref.read(regionFilterProvider),
-                                            region,
-                                          ];
-                                },
+                              (region) => Padding(
+                                padding: const EdgeInsets.only(right: 8.0),
+                                child: FilterChip(
+                                  label: Text(getFlagEmoji(region)),
+                                  selected: regionFilter.contains(region),
+                                  onSelected: (value) {
+                                    ref
+                                        .read(regionFilterProvider.notifier)
+                                        .state = ref
+                                                .read(regionFilterProvider)
+                                                .contains(region)
+                                            ? ref
+                                                .read(regionFilterProvider)
+                                                .where((r) => r != region)
+                                                .toList()
+                                            : [
+                                              ...ref.read(regionFilterProvider),
+                                              region,
+                                            ];
+                                  },
+                                ),
                               ),
                             )
                             .toList(),
@@ -99,14 +102,30 @@ class PlaneSearchCard extends HookConsumerWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Text('Public'),
+                Text(
+                  'Public',
+                  style: TextStyle(
+                    color:
+                        ref.watch(planeVisibilityProvider)
+                            ? Colors.grey
+                            : Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
                 Switch(
                   value: ref.watch(planeVisibilityProvider),
                   onChanged: (value) {
                     ref.read(planeVisibilityProvider.notifier).state = value;
                   },
                 ),
-                Text('Private'),
+                Text(
+                  'Private',
+                  style: TextStyle(
+                    color:
+                        ref.watch(planeVisibilityProvider)
+                            ? Theme.of(context).colorScheme.secondary
+                            : Colors.grey,
+                  ),
+                ),
               ],
             ),
           ],
