@@ -12,16 +12,16 @@ class Conflux {
   final String? tag;
   final String? signature;
   final String? cidr;
-  final String subnet;
-  final String plane;
+  final String? subnet;
+  final String? plane;
   final bool? public;
   final bool? portal;
-  final String ca_pem;
-  final String key_pem;
-  final String cert_pem;
-  final String veil_host;
-  final String veil_port;
-  final String region;
+  final String? ca_pem;
+  final String? key_pem;
+  final String? cert_pem;
+  final String? veil_host;
+  final int? veil_port;
+  final String? region;
   Conflux({
     required this.id,
     required this.created_at,
@@ -30,16 +30,16 @@ class Conflux {
     this.tag,
     this.signature,
     this.cidr,
-    required this.subnet,
-    required this.plane,
+    this.subnet,
+    this.plane,
     this.public,
     this.portal,
-    required this.ca_pem,
-    required this.key_pem,
-    required this.cert_pem,
-    required this.veil_host,
-    required this.veil_port,
-    required this.region,
+    this.ca_pem,
+    this.key_pem,
+    this.cert_pem,
+    this.veil_host,
+    this.veil_port,
+    this.region,
   });
 
   Conflux copyWith({
@@ -58,7 +58,7 @@ class Conflux {
     String? key_pem,
     String? cert_pem,
     String? veil_host,
-    String? veil_port,
+    int? veil_port,
     String? region,
   }) {
     return Conflux(
@@ -113,16 +113,16 @@ class Conflux {
       tag: map['tag'] != null ? map['tag'] as String : null,
       signature: map['signature'] != null ? map['signature'] as String : null,
       cidr: map['cidr'] != null ? map['cidr'] as String : null,
-      subnet: map['subnet'] as String,
-      plane: map['plane'] as String,
+      subnet: map['subnet'] as String?,
+      plane: map['plane'] as String?,
       public: map['public'] != null ? map['public'] as bool : null,
       portal: map['portal'] != null ? map['portal'] as bool : null,
-      ca_pem: map['ca_pem'] as String,
-      key_pem: map['key_pem'] as String,
-      cert_pem: map['cert_pem'] as String,
-      veil_host: map['veil_host'] as String,
-      veil_port: map['veil_port'] as String,
-      region: map['region'] as String,
+      ca_pem: map['ca_pem'] as String?,
+      key_pem: map['key_pem'] as String?,
+      cert_pem: map['cert_pem'] as String?,
+      veil_host: map['veil_host'] as String?,
+      veil_port: map['veil_port'] as int?,
+      region: map['region'] as String?,
     );
   }
 
@@ -182,19 +182,6 @@ class Conflux {
 }
 
 final confluxesProvider = FutureProvider<List<Conflux>>((ref) async {
-  final confluxes = await supabase.from('confluxes_details').select('*');
+  final confluxes = await supabase.from('conflux_details').select('*');
   return confluxes.map((json) => Conflux.fromMap(json)).toList();
-});
-
-final confluxProvider = FutureProvider.family<Conflux?, (String name, String plane)>((ref, params) async {
-  final (name, plane) = params;
-  final confluxes = await ref.watch(confluxesProvider.future);
-  
-  try {
-    return confluxes.firstWhere(
-      (conflux) => conflux.name == name && conflux.plane == plane,
-    );
-  } catch (e) {
-    return null;
-  }
 });

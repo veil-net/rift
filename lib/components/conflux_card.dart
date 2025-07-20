@@ -1,0 +1,111 @@
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:rift/providers/conflux_provider.dart';
+
+class ConfluxCard extends HookConsumerWidget {
+  final Conflux conflux;
+  const ConfluxCard({super.key, required this.conflux});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    String getFlagEmoji(String region) {
+      if (region.length != 2) return '';
+      final base = 0x1F1E6;
+      final chars = region.toUpperCase().codeUnits;
+      return String.fromCharCodes([
+        base + (chars[0] - 0x41),
+        base + (chars[1] - 0x41),
+      ]);
+    }
+
+    return Card(
+      elevation: 5,
+      child: Padding(
+        padding: const EdgeInsets.all(8.0),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: Text(
+                getFlagEmoji(conflux.region ?? ''),
+                style: TextStyle(fontSize: 24),
+              ),
+              title: Text(
+                conflux.name,
+                style: TextStyle(color: Theme.of(context).colorScheme.primary),
+              ),
+              subtitle: Text(
+                conflux.region ?? 'Unknown Region',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+              trailing: Text(
+                conflux.cidr ?? 'Unknown CIDR',
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.secondary,
+                ),
+              ),
+            ),
+            TextField(
+              decoration: InputDecoration(
+                labelText: 'Signature',
+                border: OutlineInputBorder(),
+                isDense: true,
+                suffixIcon:
+                    conflux.signature != null
+                        ? IconButton(
+                          onPressed: () {
+                            Clipboard.setData(
+                              ClipboardData(text: conflux.signature!),
+                            );
+                          },
+                          icon: Icon(Icons.copy),
+                        )
+                        : null,
+              ),
+              controller: TextEditingController(text: conflux.signature),
+              readOnly: true,
+            ),
+            SizedBox(height: 16),
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Created At',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    controller: TextEditingController(
+                      text:
+                          "${conflux.created_at.toLocal().hour}:${conflux.created_at.toLocal().minute} ${conflux.created_at.toLocal().day}/${conflux.created_at.toLocal().month}/${conflux.created_at.toLocal().year}",
+                    ),
+                    readOnly: true,
+                  ),
+                ),
+                SizedBox(width: 16),
+                Expanded(
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: 'Last Seen',
+                      border: OutlineInputBorder(),
+                      isDense: true,
+                    ),
+                    controller: TextEditingController(
+                      text:
+                          "${conflux.last_seen.toLocal().hour}:${conflux.last_seen.toLocal().minute} ${conflux.last_seen.toLocal().day}/${conflux.last_seen.toLocal().month}/${conflux.last_seen.toLocal().year}",
+                    ),
+                    readOnly: true,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

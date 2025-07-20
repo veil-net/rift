@@ -7,6 +7,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:rift/main.dart';
 import 'package:rift/providers/api_provider.dart';
 import 'package:rift/providers/conflux_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -19,12 +20,14 @@ class VeilNet {
   final Conflux? conflux;
   final Process? process;
   final bool isBusy;
+  final bool shouldConnect;
   VeilNet({
     this.name,
     this.plane,
     this.conflux,
     this.process,
     required this.isBusy,
+    required this.shouldConnect,
   });
 
   VeilNet copyWith({
@@ -33,6 +36,7 @@ class VeilNet {
     Conflux? conflux,
     Process? process,
     bool? isBusy,
+    bool? shouldConnect,
   }) {
     return VeilNet(
       name: name ?? this.name,
@@ -40,11 +44,17 @@ class VeilNet {
       conflux: conflux ?? this.conflux,
       process: process ?? this.process,
       isBusy: isBusy ?? this.isBusy,
+      shouldConnect: shouldConnect ?? this.shouldConnect,
     );
   }
 
   Map<String, dynamic> toMap() {
-    return <String, dynamic>{'name': name, 'plane': plane, 'isBusy': isBusy};
+    return <String, dynamic>{
+      'name': name,
+      'plane': plane,
+      'isBusy': isBusy,
+      'shouldConnect': shouldConnect,
+    };
   }
 
   factory VeilNet.fromMap(Map<String, dynamic> map) {
@@ -52,6 +62,7 @@ class VeilNet {
       name: map['name'] != null ? map['name'] as String : null,
       plane: map['plane'] != null ? map['plane'] as String : null,
       isBusy: map['isBusy'] as bool,
+      shouldConnect: map['shouldConnect'] as bool,
     );
   }
 
@@ -62,19 +73,21 @@ class VeilNet {
 
   @override
   String toString() {
-    return 'VeilNet(name: $name, plane: $plane, conflux: $conflux, process: $process, isBusy: $isBusy)';
+    return 'VeilNet(name: $name, plane: $plane, isBusy: $isBusy, shouldConnect: $shouldConnect)';
   }
 
   @override
   bool operator ==(covariant VeilNet other) {
     if (identical(this, other)) return true;
 
-    return other.name == name && other.plane == plane;
+    return other.name == name &&
+        other.plane == plane &&
+        other.conflux == conflux;
   }
 
   @override
   int get hashCode {
-    return name.hashCode ^ plane.hashCode;
+    return name.hashCode ^ plane.hashCode ^ conflux.hashCode;
   }
 
   bool get isConnected => conflux != null && conflux!.signature != null;
@@ -83,7 +96,8 @@ class VeilNet {
 class VeilNetNotifier extends StateNotifier<VeilNet> {
   final Ref ref;
   Timer? _timer;
-  VeilNetNotifier(this.ref) : super(VeilNet(isBusy: false)) {
+  VeilNetNotifier(this.ref)
+    : super(VeilNet(isBusy: false, shouldConnect: false)) {
     _loadState();
   }
 
@@ -96,23 +110,50 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
 
     // Load conflux from provider
     if (name != null && plane != null) {
-      ref.invalidate(confluxProvider((name, plane)));
-      final conflux = await ref.read(confluxProvider((name, plane)).future);
-      state = state.copyWith(conflux: conflux);
+      final conflux = await supabase
+          .from('conflux_details')
+          .select('*')
+          .eq('name', name)
+          .eq('plane', plane);
+      state = state.copyWith(
+        conflux: conflux.isNotEmpty ? Conflux.fromMap(conflux.first) : null,
+      );
     }
 
     // Start timer to refresh conflux every 5 seconds
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
+      ref.invalidate(confluxesProvider);
       if (state.name != null && state.plane != null) {
-        ref.invalidate(confluxProvider((state.name!, state.plane!)));
-        final conflux = await ref.read(
-          confluxProvider((state.name!, state.plane!)).future,
+        final conflux = await supabase
+            .from('conflux_details')
+            .select('*')
+            .eq('name', state.name!)
+            .eq('plane', state.plane!);
+        if (conflux.isNotEmpty) {
+          state = state.copyWith(conflux: Conflux.fromMap(conflux.first));
+        } else {
+          state = VeilNet(
+            name: state.name,
+            plane: state.plane,
+            conflux: null,
+            isBusy: state.isBusy,
+            shouldConnect: state.shouldConnect,
+          );
+        }
+      } else {
+        state = VeilNet(
+          name: state.name,
+          plane: state.plane,
+          conflux: null,
+          isBusy: state.isBusy,
+          shouldConnect: state.shouldConnect,
         );
-        if (state.conflux != conflux) {
-          state = state.copyWith(conflux: conflux);
-          if (state.isBusy) {
-            state = state.copyWith(isBusy: false);
-          }
+      }
+      if (state.isBusy && state.shouldConnect == state.isConnected) {
+        state = state.copyWith(isBusy: false);
+        if (!state.isConnected) {
+          await prefs.remove('name');
+          await prefs.remove('plane');
         }
       }
     });
@@ -124,7 +165,7 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
     super.dispose();
   }
 
-  Future<void> connect(String name, String plane) async {
+  Future<void> connect(String name, String plane, bool public) async {
     if (state.isBusy) {
       throw Exception('Daemon is busy, please wait for it to finish');
     }
@@ -133,13 +174,13 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
       throw Exception('Please disconnect first');
     }
 
-    state = state.copyWith(isBusy: true);
+    state = state.copyWith(isBusy: true, shouldConnect: true);
 
     try {
       // Get anchor token
       final api = ref.read(apiProvider);
       final response = await api.post(
-        '/conflux?conflux_name=$name&plane_name=$plane',
+        '/conflux?conflux_name=$name&plane_name=$plane&public=$public',
       );
       final anchorToken = response.data;
       log('Anchor token: $anchorToken');
@@ -187,8 +228,11 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           break;
       }
       state = state.copyWith(name: name, plane: plane);
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('name', name);
+      await prefs.setString('plane', plane);
     } catch (e) {
-      state = state.copyWith(isBusy: false);
+      state = state.copyWith(isBusy: false, shouldConnect: false);
       rethrow;
     }
   }
@@ -201,9 +245,8 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
     if (!state.isConnected) {
       throw Exception('Already disconnected');
     }
-
+    state = state.copyWith(isBusy: true, shouldConnect: false);
     try {
-      state = state.copyWith(isBusy: true);
       switch (Platform.operatingSystem) {
         case "windows":
           if (!state.isConnected) {
@@ -223,8 +266,9 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           }
           break;
       }
+      state = state.copyWith(shouldConnect: false);
     } catch (e) {
-      state = state.copyWith(isBusy: false);
+      state = state.copyWith(isBusy: false, shouldConnect: true);
       rethrow;
     }
   }

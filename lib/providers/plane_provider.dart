@@ -132,6 +132,11 @@ final privatePlanesProvider = FutureProvider<List<Plane>>((ref) async {
   return planes.where((plane) => !plane.public).toList();
 });
 
+final regionProvider = FutureProvider<List<String>>((ref) async {
+  final planes = await ref.watch(planesProvider.future);
+  return planes.map((plane) => plane.region).toSet().toList();
+});
+
 final regionFilterProvider = StateProvider<List<String>>((ref) {
   final planes = ref.watch(planesProvider);
   return planes.when(

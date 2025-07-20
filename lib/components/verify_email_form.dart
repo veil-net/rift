@@ -6,32 +6,58 @@ import 'package:rift/components/dialog_manager.dart';
 import 'package:rift/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-class LoginForm extends HookConsumerWidget {
-  const LoginForm({super.key});
+class EmailVerificationForm extends HookConsumerWidget {
+  const EmailVerificationForm({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(() => GlobalKey<FormState>());
     final emailController = useTextEditingController();
-    final passwordController = useTextEditingController();
-    final showPassword = useState(false);
+    final otpController = useTextEditingController();
     final isBusy = useState(false);
+    final tokenSent = useState(false);
 
-    Future<void> login() async {
+    Future<void> verifyToken() async {
       if (!formKey.currentState!.validate()) {
         return;
       }
-
-      isBusy.value = true;
+      formKey.currentState!.save();
       try {
-        await supabase.auth.signInWithPassword(
+        isBusy.value = true;
+        await supabase.auth.verifyOTP(
           email: emailController.text,
-          password: passwordController.text,
+          token: otpController.text,
+          type: OtpType.email,
         );
         await Future.delayed(const Duration(seconds: 1));
         if (context.mounted) {
           context.go('/home');
         }
+      } on AuthException catch (e) {
+        if (context.mounted) {
+          DialogManager.showDialog(context, e.message, DialogType.error);
+        }
+      } catch (e) {
+        if (context.mounted) {
+          DialogManager.showDialog(context, e.toString(), DialogType.error);
+        }
+      } finally {
+        isBusy.value = false;
+      }
+    }
+
+    Future<void> sendToken() async {
+      try {
+        isBusy.value = true;
+        await supabase.auth.signInWithOtp(email: emailController.text);
+        if (context.mounted) {
+          DialogManager.showDialog(
+            context,
+            'Token resent! Please check your email for the new token.',
+            DialogType.success,
+          );
+        }
+        tokenSent.value = true;
       } on AuthException catch (e) {
         if (context.mounted) {
           DialogManager.showDialog(context, e.message, DialogType.error);
@@ -54,12 +80,12 @@ class LoginForm extends HookConsumerWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               TextFormField(
+                controller: emailController,
                 decoration: InputDecoration(
                   labelText: 'Email',
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.email),
                 ),
-                controller: emailController,
                 autofillHints: [AutofillHints.email],
                 keyboardType: TextInputType.emailAddress,
                 validator: (value) {
@@ -76,64 +102,42 @@ class LoginForm extends HookConsumerWidget {
               ),
               const SizedBox(height: 16),
               TextFormField(
+                controller: otpController,
                 decoration: InputDecoration(
-                  labelText: 'Password',
+                  labelText: 'Verification Token',
                   border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    onPressed: () {
-                      showPassword.value = !showPassword.value;
-                    },
-                    icon: Icon(
-                      showPassword.value
-                          ? Icons.visibility
-                          : Icons.visibility_off,
-                    ),
-                  ),
+                  prefixIcon: Icon(Icons.token),
                 ),
-                obscureText: !showPassword.value,
-                controller: passwordController,
-                autofillHints: [AutofillHints.password],
                 validator: (value) {
                   if (value == null || value.isEmpty) {
-                    return 'Password is required';
+                    return 'Please enter the verification token';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 16),
-              FilledButton.icon(
-                onPressed: login,
-                icon: Icon(Icons.login),
-                label:
-                    isBusy.value
-                        ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
-                        )
-                        : const Text('Login'),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceAround,
+                children: [
+                  FilledButton.icon(
+                    onPressed:
+                        isBusy.value || tokenSent.value ? null : sendToken,
+                    label: const Text('Resend Token'),
+                    icon: const Icon(Icons.send),
+                  ),
+                  FilledButton.icon(
+                    onPressed: isBusy.value ? null : verifyToken,
+                    label: const Text('Submit'),
+                    icon: const Icon(Icons.check),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
-                  context.go('/register');
+                  context.go('/login');
                 },
-                child: const Text('Don\'t have an account? Sign up'),
-              ),
-              TextButton(
-                onPressed: () {
-                  context.go('/forgot-password');
-                },
-                child: const Text('Forgot password?'),
-              ),
-              TextButton(
-                onPressed: () {
-                  context.go('/verify-email');
-                },
-                child: const Text('Need to verify your email?'),
+                child: const Text('Back to Login'),
               ),
             ],
           ),

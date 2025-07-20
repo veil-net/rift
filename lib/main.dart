@@ -1,13 +1,19 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:rift/pages/home_page.dart';
+import 'package:rift/pages/landing_page.dart';
+import 'package:rift/pages/login_page.dart';
+import 'package:rift/pages/portal_page.dart';
+import 'package:rift/pages/register_page.dart';
+import 'package:rift/pages/rift_page.dart';
+import 'package:rift/pages/verify_email_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
 import 'providers/user_provider.dart';
-import 'screens/auth_screen.dart';
-import 'screens/home_screen.dart';
 import 'tray_warpper.dart';
 
 Future<void> main() async {
@@ -37,10 +43,53 @@ class MyApp extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final user = ref.watch(userProvider);
+    final router = GoRouter(
+      routes: [
+        GoRoute(
+          path: '/',
+          builder: (context, state) => const LandingPage(),
+          redirect: (context, state) async {
+            // Handle refresh token
+            final refreshToken = state.uri.queryParameters['refreshToken'];
+            if (refreshToken != null) {
+              await supabase.auth.setSession(refreshToken);
+            }
+            // Check if user is logged in
+            await Future.delayed(const Duration(seconds: 1));
+            final userState = ref.read(userProvider);
+            if (userState.session != null) {
+              return '/home';
+            }
+            return '/login';
+          },
+        ),
+        GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
+        GoRoute(
+          path: '/register',
+          builder: (context, state) => const RegisterPage(),
+        ),
+        GoRoute(
+          path: '/verify-email',
+          builder: (context, state) => const VerifyEmailPage(),
+        ),
+        GoRoute(
+          path: '/home',
+          builder: (context, state) => const HomePage(),
+          redirect: (context, state) {
+            final userState = ref.read(userProvider);
+            return userState.session == null ? '/login' : null;
+          },
+        ),
+        GoRoute(
+          path: '/portal',
+          builder: (context, state) => const PortalPage(),
+        ),
+        GoRoute(path: '/rift', builder: (context, state) => const RiftPage()),
+      ],
+    );
 
-    final app = MaterialApp(
-      title: 'VeilNet Console',
+    final app = MaterialApp.router(
+      title: 'VeilNet Rift',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color.fromARGB(255, 14, 165, 233),
@@ -58,7 +107,7 @@ class MyApp extends HookConsumerWidget {
         ),
       ),
       themeMode: ThemeMode.dark,
-      home: user.session == null ? const AuthScreen() : const HomeScreen(),
+      routerConfig: router,
     );
 
     if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
