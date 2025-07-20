@@ -151,3 +151,7 @@ final regionFilterProvider = StateProvider<List<String>>((ref) {
 final planeNameFilterProvider = StateProvider<String>((ref) {
   return '';
 });
+
+final planeVisibilityProvider = StateProvider<bool>((ref) {
+  return false;
+});

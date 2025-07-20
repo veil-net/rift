@@ -96,6 +96,12 @@ class PlaneSearchCard extends HookConsumerWidget {
                 loading: () => [],
               ),
             ),
+            Switch(
+              value: ref.watch(planeVisibilityProvider),
+              onChanged: (value) {
+                ref.read(planeVisibilityProvider.notifier).state = value;
+              },
+            ),
           ],
         ),
       ),
