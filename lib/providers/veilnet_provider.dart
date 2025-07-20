@@ -14,6 +14,13 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 const _vpnChannel = MethodChannel('veilnet/channel');
 
+final logProvider = StateProvider<List<String>>((ref) => []);
+
+String stripAnsiCodes(String text) {
+  // Remove ANSI color codes (ESC[ followed by numbers and ending with m)
+  return text.replaceAll(RegExp(r'\x1B\[[0-9;]*[a-zA-Z]'), '');
+}
+
 class VeilNet {
   final String? name;
   final String? plane;
@@ -188,17 +195,25 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
       switch (Platform.operatingSystem) {
         case "windows":
           final byteData = await rootBundle.load(
-            'assets/bin/windows/veilnet-daemon',
+            'assets/bin/windows/veilnet-conflux.exe',
           );
           final tempDir = await getTemporaryDirectory();
-          final file = File('${tempDir.path}/veilnet-daemon');
+          final file = File('${tempDir.path}/veilnet-conflux.exe');
           await file.writeAsBytes(byteData.buffer.asUint8List());
-          final arguments = ['-t', anchorToken];
+          final arguments = ['-t', anchorToken.toString()];
 
           final process = await Process.start(
             file.path,
-            arguments as List<String>,
+            arguments,
           );
+          process.stdout.listen((event) {
+            final text = stripAnsiCodes(String.fromCharCodes(event));
+            ref.read(logProvider.notifier).update((logs) => [...logs, text]);
+          });
+          process.stderr.listen((event) {
+            final text = stripAnsiCodes(String.fromCharCodes(event));
+            ref.read(logProvider.notifier).update((logs) => [...logs, text]);
+          });
           state = state.copyWith(process: process);
           break;
 
@@ -267,6 +282,7 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           break;
       }
       state = state.copyWith(shouldConnect: false);
+      ref.read(logProvider.notifier).update((logs) => []);
     } catch (e) {
       state = state.copyWith(isBusy: false, shouldConnect: true);
       rethrow;
