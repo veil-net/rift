@@ -125,7 +125,7 @@ class LoginForm extends HookConsumerWidget {
               ),
               TextButton(
                 onPressed: () {
-                  context.go('/forgot-password');
+                  context.go('/password-reset');
                 },
                 child: const Text('Forgot password?'),
               ),

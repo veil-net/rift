@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/pages/home_page.dart';
 import 'package:rift/pages/landing_page.dart';
 import 'package:rift/pages/login_page.dart';
+import 'package:rift/pages/password_reset_page.dart';
 import 'package:rift/pages/portal_page.dart';
 import 'package:rift/pages/register_page.dart';
 import 'package:rift/pages/rift_page.dart';
@@ -71,6 +72,10 @@ class MyApp extends HookConsumerWidget {
         GoRoute(
           path: '/verify-email',
           builder: (context, state) => const VerifyEmailPage(),
+        ),
+        GoRoute(
+          path: '/password-reset',
+          builder: (context, state) => const PasswordResetPage(),
         ),
         GoRoute(
           path: '/home',
