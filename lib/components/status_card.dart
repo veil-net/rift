@@ -23,7 +23,9 @@ class StatusCard extends HookConsumerWidget {
                       : const Icon(Icons.warning, color: Colors.red),
               title: Text(
                 veilNet.isBusy
-                    ? '......'
+                    ? veilNet.shouldConnect
+                        ? 'Connecting...'
+                        : 'Disconnecting...'
                     : veilNet.isConnected
                     ? 'Connected to ${veilNet.conflux?.plane}'
                     : 'Disconnected',
@@ -37,9 +39,11 @@ class StatusCard extends HookConsumerWidget {
                 ),
               ),
               subtitle:
-                  veilNet.isConnected && !veilNet.isBusy
+                  veilNet.isBusy
+                      ? LinearProgressIndicator()
+                      : veilNet.isConnected
                       ? Text(veilNet.conflux?.cidr ?? '')
-                      : null,
+                      : Text('Please connect to a plane'),
               trailing:
                   veilNet.isBusy
                       ? null

@@ -43,8 +43,22 @@ class HomePage extends HookConsumerWidget {
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      ProfileCard(),
-                      StatusCard(),
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0, end: 1),
+                        curve: Curves.easeInOut,
+                        duration: const Duration(seconds: 1),
+                        builder: (context, value, child) {
+                          return Opacity(opacity: value, child: ProfileCard());
+                        },
+                      ),
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0, end: 1),
+                        curve: Curves.easeInOut,
+                        duration: const Duration(seconds: 1),
+                        builder: (context, value, child) {
+                          return Opacity(opacity: value, child: StatusCard());
+                        },
+                      ),
                       if (Platform.isWindows) LogCard(),
                     ],
                   ),
@@ -56,7 +70,14 @@ class HomePage extends HookConsumerWidget {
                             ? constraints.maxWidth
                             : constraints.maxWidth * 0.5,
                   ),
-                  child: PlaneList(),
+                  child: TweenAnimationBuilder(
+                    tween: Tween<double>(begin: 0, end: 1),
+                    duration: const Duration(seconds: 1),
+                    curve: Curves.easeInOut,
+                    builder: (context, value, child) {
+                      return Opacity(opacity: value, child: PlaneList());
+                    },
+                  ),
                 ),
               ],
             ),

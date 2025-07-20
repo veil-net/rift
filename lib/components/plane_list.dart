@@ -14,6 +14,42 @@ class PlaneList extends HookConsumerWidget {
     final planes = ref.watch(planesProvider);
     final regionFilter = ref.watch(regionFilterProvider);
     final nameFilter = ref.watch(planeNameFilterProvider);
+    final planeVisibility = ref.watch(planeVisibilityProvider);
+
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        PlaneSearchCard(),
+        planes.when(
+          data: (data) {
+            final filteredPlanes =
+                data.where((plane) {
+                  return regionFilter.contains(plane.region) &&
+                      plane.name.contains(nameFilter) &&
+                      plane.public == !planeVisibility;
+                }).toList();
+            return ListView.builder(
+              shrinkWrap: true,
+              itemCount: filteredPlanes.length,
+              itemBuilder: (context, index) {
+                return PlaneCard(plane: filteredPlanes[index]);
+              },
+            );
+          },
+          error: (error, stackTrace) => Text('Error: $error'),
+          loading: () => const Center(child: CircularProgressIndicator()),
+        ),
+      ],
+    );
+  }
+}
+
+class PlaneCard extends HookConsumerWidget {
+  final Plane plane;
+  const PlaneCard({super.key, required this.plane});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
     final veilNet = ref.watch(veilnetProvider);
     final veilNetNotifier = ref.watch(veilnetProvider.notifier);
 
@@ -37,48 +73,36 @@ class PlaneList extends HookConsumerWidget {
       }
     }
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        PlaneSearchCard(),
-        planes.when(
-          data: (data) {
-            final filteredPlanes =
-                data.where((plane) {
-                  return regionFilter.contains(plane.region) &&
-                      plane.name.contains(nameFilter);
-                }).toList();
-            return ListView.builder(
-              shrinkWrap: true,
-              itemCount: filteredPlanes.length,
-              itemBuilder: (context, index) {
-                return Card(
-                  elevation: 5,
-                  child: ListTile(
-                    leading: Text(
-                      getFlagEmoji(filteredPlanes[index].region),
-                      style: TextStyle(fontSize: 24),
-                    ),
-                    title: Text(filteredPlanes[index].name),
-                    subtitle: Text(filteredPlanes[index].subnet),
-                    trailing: FilledButton(
-                      onPressed:
-                          veilNet.isBusy || veilNet.isConnected
-                              ? null
-                              : () {
-                                connectToPlane(filteredPlanes[index]);
-                              },
-                      child: Text('Connect'),
-                    ),
-                  ),
-                );
-              },
-            );
-          },
-          error: (error, stackTrace) => Text('Error: $error'),
-          loading: () => const Center(child: CircularProgressIndicator()),
-        ),
-      ],
+    return TweenAnimationBuilder(
+      tween: Tween<double>(begin: 1, end: 0),
+      duration: const Duration(milliseconds: 250),
+      builder: (context, value, child) {
+        return Transform.translate(
+          offset: Offset(value * 100, 0),
+          child: Card(
+            elevation: 5,
+            child: ListTile(
+              leading: Text(
+                getFlagEmoji(plane.region),
+                style: TextStyle(fontSize: 24),
+              ),
+              title: Text(plane.name),
+              subtitle: Text(plane.subnet),
+              trailing: FilledButton(
+                onPressed:
+                    veilNet.isBusy ||
+                            veilNet.isConnected ||
+                            plane.portals == 0
+                        ? null
+                        : () {
+                          connectToPlane(plane);
+                        },
+                child: Text('Connect'),
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 }
