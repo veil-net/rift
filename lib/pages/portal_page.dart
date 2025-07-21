@@ -16,7 +16,7 @@ class PortalPage extends HookConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isPortrait = constraints.maxWidth < constraints.maxHeight;
-        return AnimatedGradientBackground(
+        return AnimatedBackground(
           child: Scaffold(
             backgroundColor: Colors.transparent,
             appBar: VeilNetAppBar(),

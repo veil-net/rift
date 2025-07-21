@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/dialog_manager.dart';
-import 'package:rift/components/plane_search_card.dart';
 import 'package:rift/providers/plane_provider.dart';
 import 'package:rift/providers/veilnet_provider.dart';
 import 'package:uuid/uuid.dart';
@@ -16,30 +15,24 @@ class PlaneList extends HookConsumerWidget {
     final nameFilter = ref.watch(planeNameFilterProvider);
     final planeVisibility = ref.watch(planeVisibilityProvider);
 
-    return Column(
-      mainAxisAlignment: MainAxisAlignment.center,
-      children: [
-        PlaneSearchCard(),
-        planes.when(
-          data: (data) {
-            final filteredPlanes =
-                data.where((plane) {
-                  return regionFilter.contains(plane.region) &&
-                      plane.name.contains(nameFilter) &&
-                      plane.public == !planeVisibility;
-                }).toList();
-            return ListView.builder(
-              shrinkWrap: true,
-              itemCount: filteredPlanes.length,
-              itemBuilder: (context, index) {
-                return PlaneCard(plane: filteredPlanes[index]);
-              },
-            );
+    return planes.when(
+      data: (data) {
+        final filteredPlanes =
+            data.where((plane) {
+              return regionFilter.contains(plane.region) &&
+                  plane.name.contains(nameFilter) &&
+                  plane.public == !planeVisibility;
+            }).toList();
+        return ListView.builder(
+          shrinkWrap: true,
+          itemCount: filteredPlanes.length,
+          itemBuilder: (context, index) {
+            return PlaneCard(plane: filteredPlanes[index]);
           },
-          error: (error, stackTrace) => Text('Error: $error'),
-          loading: () => const Center(child: CircularProgressIndicator()),
-        ),
-      ],
+        );
+      },
+      error: (error, stackTrace) => Text('Error: $error'),
+      loading: () => const Center(child: CircularProgressIndicator()),
     );
   }
 }

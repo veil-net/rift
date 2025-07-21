@@ -1,11 +1,10 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/appbar.dart';
 import 'package:rift/components/background.dart';
 import 'package:rift/components/plane_list.dart';
+import 'package:rift/components/plane_search_card.dart';
 import 'package:rift/components/profile_card.dart';
 import 'package:rift/components/status_card.dart';
 import 'package:rift/providers/veilnet_provider.dart';
@@ -27,7 +26,7 @@ class HomePage extends HookConsumerWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         final isPortrait = constraints.maxWidth < constraints.maxHeight;
-        return AnimatedGradientBackground(
+        return AnimatedBackground(
           child: Scaffold(
             backgroundColor: Colors.transparent,
             appBar: VeilNetAppBar(),
@@ -41,7 +40,6 @@ class HomePage extends HookConsumerWidget {
                             : constraints.maxWidth * 0.5,
                   ),
                   child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       TweenAnimationBuilder(
                         tween: Tween<double>(begin: 0, end: 1),
@@ -59,7 +57,6 @@ class HomePage extends HookConsumerWidget {
                           return Opacity(opacity: value, child: StatusCard());
                         },
                       ),
-                      if (Platform.isWindows) LogCard(),
                     ],
                   ),
                 ),
@@ -70,13 +67,25 @@ class HomePage extends HookConsumerWidget {
                             ? constraints.maxWidth
                             : constraints.maxWidth * 0.5,
                   ),
-                  child: TweenAnimationBuilder(
-                    tween: Tween<double>(begin: 0, end: 1),
-                    duration: const Duration(seconds: 1),
-                    curve: Curves.easeInOut,
-                    builder: (context, value, child) {
-                      return Opacity(opacity: value, child: PlaneList());
-                    },
+                  child: Column(
+                    children: [
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0, end: 1),
+                        duration: const Duration(seconds: 1),
+                        curve: Curves.easeInOut,
+                        builder: (context, value, child) {
+                          return Opacity(opacity: value, child: PlaneSearchCard());
+                        },
+                      ),
+                      TweenAnimationBuilder(
+                        tween: Tween<double>(begin: 0, end: 1),
+                        duration: const Duration(seconds: 1),
+                        curve: Curves.easeInOut,
+                        builder: (context, value, child) {
+                          return Opacity(opacity: value, child: PlaneList());
+                        },
+                      ),
+                    ],
                   ),
                 ),
               ],
@@ -121,10 +130,15 @@ class LogCard extends HookConsumerWidget {
                 child: Container(
                   decoration: BoxDecoration(
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(),
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
-                  child: SelectableText(
-                    logs.isEmpty ? 'No logs available' : logs.join('\n'),
+                  child: Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SelectableText(
+                      logs.isEmpty ? 'No logs available' : logs.join('\n'),
+                    ),
                   ),
                 ),
               ),

@@ -9,16 +9,6 @@ class ConfluxCard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    String getFlagEmoji(String region) {
-      if (region.length != 2) return '';
-      final base = 0x1F1E6;
-      final chars = region.toUpperCase().codeUnits;
-      return String.fromCharCodes([
-        base + (chars[0] - 0x41),
-        base + (chars[1] - 0x41),
-      ]);
-    }
-
     return TweenAnimationBuilder(
       tween: Tween<double>(begin: 0, end: 1),
       duration: const Duration(seconds: 1),
@@ -34,26 +24,30 @@ class ConfluxCard extends HookConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ListTile(
-                      leading: Text(
-                        getFlagEmoji(conflux.region ?? ''),
-                        style: TextStyle(fontSize: 24),
+                      leading: Icon(
+                        conflux.portal! ? Icons.cyclone : Icons.electric_bolt,
+                        color: Theme.of(context).colorScheme.secondary,
                       ),
                       title: Text(
                         conflux.name,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.primary,
                         ),
+                        overflow: TextOverflow.ellipsis,
                       ),
                       subtitle: Text(
-                        conflux.region ?? 'Unknown Region',
+                        conflux.region,
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.secondary,
                         ),
                       ),
                       trailing: Text(
-                        conflux.cidr ?? 'Unknown CIDR',
+                        conflux.cidr ?? 'Offline',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.secondary,
+                          color:
+                              conflux.cidr != null
+                                  ? Theme.of(context).colorScheme.secondary
+                                  : Theme.of(context).colorScheme.error,
                         ),
                       ),
                     ),
@@ -75,7 +69,7 @@ class ConfluxCard extends HookConsumerWidget {
                                 : null,
                       ),
                       controller: TextEditingController(
-                        text: conflux.signature,
+                        text: conflux.signature ?? 'Offline',
                       ),
                       readOnly: true,
                     ),

@@ -3,6 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/main.dart';
 import 'package:rift/providers/user_provider.dart';
+import 'package:rift/providers/veilnet_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
@@ -68,6 +69,7 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
         IconButton(
           onPressed: () async {
             await supabase.auth.signOut();
+            ref.read(veilnetProvider.notifier).disconnect();
             if (context.mounted) {
               context.go('/login');
             }

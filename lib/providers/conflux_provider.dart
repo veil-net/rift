@@ -12,16 +12,16 @@ class Conflux {
   final String? tag;
   final String? signature;
   final String? cidr;
-  final String? subnet;
-  final String? plane;
-  final bool? public;
+  final String subnet;
+  final String plane;
+  final bool public;
   final bool? portal;
-  final String? ca_pem;
-  final String? key_pem;
-  final String? cert_pem;
-  final String? veil_host;
-  final int? veil_port;
-  final String? region;
+  final String ca_pem;
+  final String key_pem;
+  final String cert_pem;
+  final String veil_host;
+  final int veil_port;
+  final String region;
   Conflux({
     required this.id,
     required this.created_at,
@@ -30,16 +30,16 @@ class Conflux {
     this.tag,
     this.signature,
     this.cidr,
-    this.subnet,
-    this.plane,
-    this.public,
+    required this.subnet,
+    required this.plane,
+    required this.public,
     this.portal,
-    this.ca_pem,
-    this.key_pem,
-    this.cert_pem,
-    this.veil_host,
-    this.veil_port,
-    this.region,
+    required this.ca_pem,
+    required this.key_pem,
+    required this.cert_pem,
+    required this.veil_host,
+    required this.veil_port,
+    required this.region,
   });
 
   Conflux copyWith({
@@ -113,16 +113,16 @@ class Conflux {
       tag: map['tag'] != null ? map['tag'] as String : null,
       signature: map['signature'] != null ? map['signature'] as String : null,
       cidr: map['cidr'] != null ? map['cidr'] as String : null,
-      subnet: map['subnet'] as String?,
-      plane: map['plane'] as String?,
-      public: map['public'] != null ? map['public'] as bool : null,
-      portal: map['portal'] != null ? map['portal'] as bool : null,
-      ca_pem: map['ca_pem'] as String?,
-      key_pem: map['key_pem'] as String?,
-      cert_pem: map['cert_pem'] as String?,
-      veil_host: map['veil_host'] as String?,
-      veil_port: map['veil_port'] as int?,
-      region: map['region'] as String?,
+      subnet: map['subnet'] as String,
+      plane: map['plane'] as String,
+      public: map['public'] as bool,
+      portal: map['portal'] as bool,
+      ca_pem: map['ca_pem'] as String,
+      key_pem: map['key_pem'] as String,
+      cert_pem: map['cert_pem'] as String,
+      veil_host: map['veil_host'] as String,
+      veil_port: map['veil_port'] as int,
+      region: map['region'] as String,
     );
   }
 
