@@ -66,43 +66,52 @@ class PlaneSearchBar extends HookConsumerWidget {
               ],
             ),
             SizedBox(height: 8),
-            Row(
-              spacing: 8,
-              children: regions.when(
-                data: (data) {
-                  return data
-                      .map(
-                        (region) => FilterChip(
-                          label: Text(getFlagEmoji(region)),
-                          selected: selectedRegions.contains(region),
-                          onSelected: (value) {
-                            ref.read(selectedRegionsProvider.notifier).state =
-                                ref
-                                        .read(selectedRegionsProvider)
-                                        .contains(region)
-                                    ? ref
-                                        .read(selectedRegionsProvider)
-                                        .where((r) => r != region)
-                                        .toList()
-                                    : [
-                                      ...ref.read(selectedRegionsProvider),
-                                      region,
-                                    ];
-                          },
-                        ),
-                      )
-                      .toList();
-                },
-                error:
-                    (error, stackTrace) => [
+            regions.when(
+              data:
+                  (data) => SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 8,
+                      children:
+                          data
+                              .map(
+                                (region) => FilterChip(
+                                  label: Text(getFlagEmoji(region)),
+                                  selected: selectedRegions.contains(region),
+                                  onSelected: (value) {
+                                    ref
+                                        .read(selectedRegionsProvider.notifier)
+                                        .state = ref
+                                                .read(selectedRegionsProvider)
+                                                .contains(region)
+                                            ? ref
+                                                .read(selectedRegionsProvider)
+                                                .where((r) => r != region)
+                                                .toList()
+                                            : [
+                                              ...ref.read(
+                                                selectedRegionsProvider,
+                                              ),
+                                              region,
+                                            ];
+                                  },
+                                ),
+                              )
+                              .toList(),
+                    ),
+                  ),
+              error:
+                  (error, stackTrace) => Row(
+                    children: [
                       Icon(
                         Icons.error,
                         color: Theme.of(context).colorScheme.error,
                       ),
-                      Text(error.toString()),
+                      Expanded(child: Text(error.toString())),
                     ],
-                loading: () => [Expanded(child: LinearProgressIndicator())],
-              ),
+                  ),
+              loading: () => LinearProgressIndicator(),
             ),
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
