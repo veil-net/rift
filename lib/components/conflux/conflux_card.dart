@@ -25,7 +25,7 @@ class ConfluxCard extends HookConsumerWidget {
                   children: [
                     ListTile(
                       leading: Icon(
-                        conflux.portal! ? Icons.cyclone : Icons.electric_bolt,
+                        conflux.portal ? Icons.cyclone : Icons.electric_bolt,
                         color: Theme.of(context).colorScheme.secondary,
                       ),
                       title: Text(

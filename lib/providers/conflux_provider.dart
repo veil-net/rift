@@ -1,7 +1,9 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+import 'package:rift/providers/user_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import 'package:rift/main.dart';
 
 class Conflux {
@@ -15,7 +17,7 @@ class Conflux {
   final String subnet;
   final String plane;
   final bool public;
-  final bool? portal;
+  final bool portal;
   final String ca_pem;
   final String key_pem;
   final String cert_pem;
@@ -33,7 +35,7 @@ class Conflux {
     required this.subnet,
     required this.plane,
     required this.public,
-    this.portal,
+    required this.portal,
     required this.ca_pem,
     required this.key_pem,
     required this.cert_pem,
@@ -182,6 +184,116 @@ class Conflux {
 }
 
 final confluxesProvider = FutureProvider<List<Conflux>>((ref) async {
+  ref.watch(userProvider);
   final confluxes = await supabase.from('conflux_details').select('*');
   return confluxes.map((json) => Conflux.fromMap(json)).toList();
 });
+
+final confluxSearchQueryProvider = StateProvider<String>((ref) => '');
+
+class LocalNetwork {
+  final String id;
+  final DateTime created_at;
+  final String user_id;
+  final String conflux_id;
+  final String subnet;
+  final String? tag;
+  LocalNetwork({
+    required this.id,
+    required this.created_at,
+    required this.user_id,
+    required this.conflux_id,
+    required this.subnet,
+    this.tag,
+  });
+
+  LocalNetwork copyWith({
+    String? id,
+    DateTime? created_at,
+    String? user_id,
+    String? conflux_id,
+    String? subnet,
+    String? tag,
+  }) {
+    return LocalNetwork(
+      id: id ?? this.id,
+      created_at: created_at ?? this.created_at,
+      user_id: user_id ?? this.user_id,
+      conflux_id: conflux_id ?? this.conflux_id,
+      subnet: subnet ?? this.subnet,
+      tag: tag ?? this.tag,
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return <String, dynamic>{
+      'id': id,
+      'created_at': created_at.toUtc().toIso8601String(),
+      'user_id': user_id,
+      'conflux_id': conflux_id,
+      'subnet': subnet,
+      'tag': tag,
+    };
+  }
+
+  factory LocalNetwork.fromMap(Map<String, dynamic> map) {
+    return LocalNetwork(
+      id: map['id'] as String,
+      created_at: DateTime.parse(map['created_at'] as String),
+      user_id: map['user_id'] as String,
+      conflux_id: map['conflux_id'] as String,
+      subnet: map['subnet'] as String,
+      tag: map['tag'] != null ? map['tag'] as String : null,
+    );
+  }
+
+  String toJson() => json.encode(toMap());
+
+  factory LocalNetwork.fromJson(String source) =>
+      LocalNetwork.fromMap(json.decode(source) as Map<String, dynamic>);
+
+  @override
+  String toString() {
+    return 'LocalNetwork(id: $id, created_at: $created_at, user_id: $user_id, conflux_id: $conflux_id, subnet: $subnet, tag: $tag)';
+  }
+
+  @override
+  bool operator ==(covariant LocalNetwork other) {
+    if (identical(this, other)) return true;
+
+    return other.id == id &&
+        other.created_at == created_at &&
+        other.user_id == user_id &&
+        other.conflux_id == conflux_id &&
+        other.subnet == subnet &&
+        other.tag == tag;
+  }
+
+  @override
+  int get hashCode {
+    return id.hashCode ^
+        created_at.hashCode ^
+        user_id.hashCode ^
+        conflux_id.hashCode ^
+        subnet.hashCode ^
+        tag.hashCode;
+  }
+}
+
+final localNetworksProvider = FutureProvider<List<LocalNetwork>>((ref) async {
+  ref.watch(userProvider);
+  final localNetworks = await supabase
+      .from('conflux_local_networks')
+      .select('*');
+  return localNetworks.map((json) => LocalNetwork.fromMap(json)).toList();
+});
+
+final confluxLocalNetworksProvider =
+    FutureProvider.family<List<LocalNetwork>, String>((ref, confluxId) async {
+      ref.watch(userProvider);
+      final localNetworks = await supabase
+          .from('conflux_local_networks')
+          .select('*')
+          .eq('conflux_id', confluxId);
+      return localNetworks.map((json) => LocalNetwork.fromMap(json)).toList();
+    });

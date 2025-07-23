@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/appbar.dart';
 import 'package:rift/components/background.dart';
-import 'package:rift/components/conflux_card.dart';
+import 'package:rift/components/conflux/conflux_card.dart';
 import 'package:rift/providers/conflux_provider.dart';
 
 class PortalPage extends HookConsumerWidget {

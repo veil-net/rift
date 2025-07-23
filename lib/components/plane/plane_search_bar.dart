@@ -3,13 +3,13 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/providers/plane_provider.dart';
 
-class PlaneSearchCard extends HookConsumerWidget {
-  const PlaneSearchCard({super.key});
+class PlaneSearchBar extends HookConsumerWidget {
+  const PlaneSearchBar({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final regions = ref.watch(regionProvider);
-    final regionFilter = ref.watch(regionFilterProvider);
+    final selectedRegions = ref.watch(selectedRegionsProvider);
 
     final planeNameTextController = useTextEditingController();
 
@@ -42,14 +42,15 @@ class PlaneSearchCard extends HookConsumerWidget {
                       suffixIcon: IconButton(
                         onPressed: () {
                           planeNameTextController.clear();
-                          ref.read(planeNameFilterProvider.notifier).state = '';
+                          ref.read(planeSearchQueryProvider.notifier).state =
+                              '';
                         },
                         icon: Icon(Icons.close),
                       ),
                     ),
                     controller: planeNameTextController,
                     onChanged: (value) {
-                      ref.read(planeNameFilterProvider.notifier).state = value;
+                      ref.read(planeSearchQueryProvider.notifier).state = value;
                     },
                   ),
                 ),
@@ -66,37 +67,41 @@ class PlaneSearchCard extends HookConsumerWidget {
             ),
             SizedBox(height: 8),
             Row(
+              spacing: 8,
               children: regions.when(
-                data:
-                    (data) =>
-                        data
-                            .map(
-                              (region) => Padding(
-                                padding: const EdgeInsets.only(right: 8.0),
-                                child: FilterChip(
-                                  label: Text(getFlagEmoji(region)),
-                                  selected: regionFilter.contains(region),
-                                  onSelected: (value) {
-                                    ref
-                                        .read(regionFilterProvider.notifier)
-                                        .state = ref
-                                                .read(regionFilterProvider)
-                                                .contains(region)
-                                            ? ref
-                                                .read(regionFilterProvider)
-                                                .where((r) => r != region)
-                                                .toList()
-                                            : [
-                                              ...ref.read(regionFilterProvider),
-                                              region,
-                                            ];
-                                  },
-                                ),
-                              ),
-                            )
-                            .toList(),
-                error: (error, stackTrace) => [],
-                loading: () => [],
+                data: (data) {
+                  return data
+                      .map(
+                        (region) => FilterChip(
+                          label: Text(getFlagEmoji(region)),
+                          selected: selectedRegions.contains(region),
+                          onSelected: (value) {
+                            ref.read(selectedRegionsProvider.notifier).state =
+                                ref
+                                        .read(selectedRegionsProvider)
+                                        .contains(region)
+                                    ? ref
+                                        .read(selectedRegionsProvider)
+                                        .where((r) => r != region)
+                                        .toList()
+                                    : [
+                                      ...ref.read(selectedRegionsProvider),
+                                      region,
+                                    ];
+                          },
+                        ),
+                      )
+                      .toList();
+                },
+                error:
+                    (error, stackTrace) => [
+                      Icon(
+                        Icons.error,
+                        color: Theme.of(context).colorScheme.error,
+                      ),
+                      Text(error.toString()),
+                    ],
+                loading: () => [Expanded(child: LinearProgressIndicator())],
               ),
             ),
             Row(
@@ -106,22 +111,22 @@ class PlaneSearchCard extends HookConsumerWidget {
                   'Public',
                   style: TextStyle(
                     color:
-                        ref.watch(planeVisibilityProvider)
+                        ref.watch(planePrivacyProvider)
                             ? Colors.grey
                             : Theme.of(context).colorScheme.secondary,
                   ),
                 ),
                 Switch(
-                  value: ref.watch(planeVisibilityProvider),
+                  value: ref.watch(planePrivacyProvider),
                   onChanged: (value) {
-                    ref.read(planeVisibilityProvider.notifier).state = value;
+                    ref.read(planePrivacyProvider.notifier).state = value;
                   },
                 ),
                 Text(
                   'Private',
                   style: TextStyle(
                     color:
-                        ref.watch(planeVisibilityProvider)
+                        ref.watch(planePrivacyProvider)
                             ? Theme.of(context).colorScheme.secondary
                             : Colors.grey,
                   ),

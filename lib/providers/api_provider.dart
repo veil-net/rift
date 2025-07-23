@@ -4,7 +4,9 @@ import 'user_provider.dart';
 
 final apiProvider = Provider<Dio>((ref) {
   final userState = ref.watch(userProvider);
-  final dio = Dio(BaseOptions(baseUrl: 'https://guardian.veilnet.org'));
+  final dio = Dio(
+    BaseOptions(baseUrl: 'https://guardian.veilnet.org'),
+  );
   dio.interceptors.add(
     InterceptorsWrapper(
       onRequest: (options, handler) {

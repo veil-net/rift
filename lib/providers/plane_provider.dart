@@ -1,12 +1,16 @@
 // ignore_for_file: public_member_api_docs, sort_constructors_first
 import 'dart:convert';
 
+import 'package:rift/providers/user_provider.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+
 import 'package:rift/main.dart';
 
 class Plane {
   final String id;
   final DateTime created_at;
+  final String user_id;
+  final String veil_id;
   final String name;
   final String subnet;
   final bool public;
@@ -17,6 +21,8 @@ class Plane {
   Plane({
     required this.id,
     required this.created_at,
+    required this.user_id,
+    required this.veil_id,
     required this.name,
     required this.subnet,
     required this.public,
@@ -29,6 +35,8 @@ class Plane {
   Plane copyWith({
     String? id,
     DateTime? created_at,
+    String? user_id,
+    String? veil_id,
     String? name,
     String? subnet,
     bool? public,
@@ -40,6 +48,8 @@ class Plane {
     return Plane(
       id: id ?? this.id,
       created_at: created_at ?? this.created_at,
+      user_id: user_id ?? this.user_id,
+      veil_id: veil_id ?? this.veil_id,
       name: name ?? this.name,
       subnet: subnet ?? this.subnet,
       public: public ?? this.public,
@@ -53,7 +63,9 @@ class Plane {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'id': id,
-      'created_at': created_at.toUtc().toIso8601String(),
+      'created_at': created_at.toIso8601String(),
+      'user_id': user_id,
+      'veil_id': veil_id,
       'name': name,
       'subnet': subnet,
       'public': public,
@@ -68,6 +80,8 @@ class Plane {
     return Plane(
       id: map['id'] as String,
       created_at: DateTime.parse(map['created_at'] as String),
+      user_id: map['user_id'] as String,
+      veil_id: map['veil_id'] as String,
       name: map['name'] as String,
       subnet: map['subnet'] as String,
       public: map['public'] as bool,
@@ -85,7 +99,7 @@ class Plane {
 
   @override
   String toString() {
-    return 'Plane(id: $id, created_at: $created_at, name: $name, subnet: $subnet, public: $public, region: $region, veil_host: $veil_host, veil_port: $veil_port, portals: $portals)';
+    return 'Plane(id: $id, created_at: $created_at, user_id: $user_id, veil_id: $veil_id, name: $name, subnet: $subnet, public: $public, region: $region, veil_host: $veil_host, veil_port: $veil_port, portals: $portals)';
   }
 
   @override
@@ -94,6 +108,8 @@ class Plane {
 
     return other.id == id &&
         other.created_at == created_at &&
+        other.user_id == user_id &&
+        other.veil_id == veil_id &&
         other.name == name &&
         other.subnet == subnet &&
         other.public == public &&
@@ -107,6 +123,8 @@ class Plane {
   int get hashCode {
     return id.hashCode ^
         created_at.hashCode ^
+        user_id.hashCode ^
+        veil_id.hashCode ^
         name.hashCode ^
         subnet.hashCode ^
         public.hashCode ^
@@ -115,21 +133,26 @@ class Plane {
         veil_port.hashCode ^
         portals.hashCode;
   }
+
+  bool get owner => user_id == supabase.auth.currentUser?.id;
 }
 
 final planesProvider = FutureProvider<List<Plane>>((ref) async {
+  ref.watch(userProvider);
   final planes = await supabase.from('planes').select('*');
   return planes.map((json) => Plane.fromMap(json)).toList();
 });
 
 final publicPlanesProvider = FutureProvider<List<Plane>>((ref) async {
-  final planes = await ref.watch(planesProvider.future);
-  return planes.where((plane) => plane.public).toList();
+  ref.watch(userProvider);
+  final planes = await supabase.from('planes').select('*').eq('public', true);
+  return planes.map((json) => Plane.fromMap(json)).toList();
 });
 
 final privatePlanesProvider = FutureProvider<List<Plane>>((ref) async {
-  final planes = await ref.watch(planesProvider.future);
-  return planes.where((plane) => !plane.public).toList();
+  ref.watch(userProvider);
+  final planes = await supabase.from('planes').select('*').eq('public', false);
+  return planes.map((json) => Plane.fromMap(json)).toList();
 });
 
 final regionProvider = FutureProvider<List<String>>((ref) async {
@@ -137,7 +160,7 @@ final regionProvider = FutureProvider<List<String>>((ref) async {
   return planes.map((plane) => plane.region).toSet().toList();
 });
 
-final regionFilterProvider = StateProvider<List<String>>((ref) {
+final selectedRegionsProvider = StateProvider<List<String>>((ref) {
   final planes = ref.watch(planesProvider);
   return planes.when(
     data:
@@ -148,10 +171,10 @@ final regionFilterProvider = StateProvider<List<String>>((ref) {
   );
 });
 
-final planeNameFilterProvider = StateProvider<String>((ref) {
+final planeSearchQueryProvider = StateProvider<String>((ref) {
   return '';
 });
 
-final planeVisibilityProvider = StateProvider<bool>((ref) {
+final planePrivacyProvider = StateProvider<bool>((ref) {
   return false;
 });

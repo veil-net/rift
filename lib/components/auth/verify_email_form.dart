@@ -108,6 +108,8 @@ class EmailVerificationForm extends HookConsumerWidget {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.token),
                 ),
+                autofillHints: [AutofillHints.oneTimeCode],
+                keyboardType: TextInputType.number,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter the verification token';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/background.dart';
-import 'package:rift/components/login_form.dart';
+import 'package:rift/components/auth/login_form.dart';
 
 class LoginPage extends HookConsumerWidget {
   const LoginPage({super.key});

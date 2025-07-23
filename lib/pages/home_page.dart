@@ -1,10 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/appbar.dart';
 import 'package:rift/components/background.dart';
-import 'package:rift/components/plane_list.dart';
-import 'package:rift/components/plane_search_card.dart';
+import 'package:rift/components/plane/plane_card.dart';
 import 'package:rift/components/profile_card.dart';
 import 'package:rift/components/status_card.dart';
 import 'package:rift/providers/veilnet_provider.dart';
@@ -14,15 +12,6 @@ class HomePage extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final animationController = useAnimationController(
-      duration: const Duration(seconds: 8),
-    );
-
-    useEffect(() {
-      animationController.repeat();
-      return null;
-    }, [animationController]);
-
     return LayoutBuilder(
       builder: (context, constraints) {
         final isPortrait = constraints.maxWidth < constraints.maxHeight;
@@ -30,65 +19,140 @@ class HomePage extends HookConsumerWidget {
           child: Scaffold(
             backgroundColor: Colors.transparent,
             appBar: VeilNetAppBar(),
-            body: Wrap(
-              children: [
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth:
-                        isPortrait
-                            ? constraints.maxWidth
-                            : constraints.maxWidth * 0.5,
-                  ),
-                  child: Column(
-                    children: [
-                      TweenAnimationBuilder(
-                        tween: Tween<double>(begin: 0, end: 1),
-                        curve: Curves.easeInOut,
-                        duration: const Duration(seconds: 1),
-                        builder: (context, value, child) {
-                          return Opacity(opacity: value, child: ProfileCard());
-                        },
-                      ),
-                      TweenAnimationBuilder(
-                        tween: Tween<double>(begin: 0, end: 1),
-                        curve: Curves.easeInOut,
-                        duration: const Duration(seconds: 1),
-                        builder: (context, value, child) {
-                          return Opacity(opacity: value, child: StatusCard());
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                ConstrainedBox(
-                  constraints: BoxConstraints(
-                    maxWidth:
-                        isPortrait
-                            ? constraints.maxWidth
-                            : constraints.maxWidth * 0.5,
-                  ),
-                  child: Column(
-                    children: [
-                      TweenAnimationBuilder(
-                        tween: Tween<double>(begin: 0, end: 1),
-                        duration: const Duration(seconds: 1),
-                        curve: Curves.easeInOut,
-                        builder: (context, value, child) {
-                          return Opacity(opacity: value, child: PlaneSearchCard());
-                        },
-                      ),
-                      TweenAnimationBuilder(
-                        tween: Tween<double>(begin: 0, end: 1),
-                        duration: const Duration(seconds: 1),
-                        curve: Curves.easeInOut,
-                        builder: (context, value, child) {
-                          return Opacity(opacity: value, child: PlaneList());
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+            body: SafeArea(
+              child: Center(
+                child:
+                    isPortrait
+                        ? Column(
+                          children: [
+                            TweenAnimationBuilder(
+                              tween: Tween<double>(begin: 0, end: 1),
+                              curve: Curves.easeInOut,
+                              duration: const Duration(seconds: 1),
+                              builder: (context, value, child) {
+                                return Opacity(
+                                  opacity: value,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          isPortrait
+                                              ? constraints.maxWidth
+                                              : constraints.maxWidth * 0.5,
+                                    ),
+                                    child: ProfileCard(),
+                                  ),
+                                );
+                              },
+                            ),
+                            TweenAnimationBuilder(
+                              tween: Tween<double>(begin: 0, end: 1),
+                              curve: Curves.easeInOut,
+                              duration: const Duration(seconds: 1),
+                              builder: (context, value, child) {
+                                return Opacity(
+                                  opacity: value,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          isPortrait
+                                              ? constraints.maxWidth
+                                              : constraints.maxWidth * 0.5,
+                                    ),
+                                    child: StatusCard(),
+                                  ),
+                                );
+                              },
+                            ),
+                            Expanded(
+                              child: TweenAnimationBuilder(
+                                tween: Tween<double>(begin: 0, end: 1),
+                                curve: Curves.easeInOut,
+                                duration: const Duration(seconds: 1),
+                                builder: (context, value, child) {
+                                  return Opacity(
+                                    opacity: value,
+                                    child: ConstrainedBox(
+                                      constraints: BoxConstraints(
+                                        maxWidth:
+                                            isPortrait
+                                                ? constraints.maxWidth
+                                                : constraints.maxWidth * 0.5,
+                                      ),
+                                      child: PlaneCard(),
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          ],
+                        )
+                        : Row(
+                          children: [
+                            Column(
+                              children: [
+                                TweenAnimationBuilder(
+                                  tween: Tween<double>(begin: 0, end: 1),
+                                  curve: Curves.easeInOut,
+                                  duration: const Duration(seconds: 1),
+                                  builder: (context, value, child) {
+                                    return Opacity(
+                                      opacity: value,
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxWidth:
+                                              isPortrait
+                                                  ? constraints.maxWidth
+                                                  : constraints.maxWidth * 0.5,
+                                        ),
+                                        child: ProfileCard(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                                TweenAnimationBuilder(
+                                  tween: Tween<double>(begin: 0, end: 1),
+                                  curve: Curves.easeInOut,
+                                  duration: const Duration(seconds: 1),
+                                  builder: (context, value, child) {
+                                    return Opacity(
+                                      opacity: value,
+                                      child: ConstrainedBox(
+                                        constraints: BoxConstraints(
+                                          maxWidth:
+                                              isPortrait
+                                                  ? constraints.maxWidth
+                                                  : constraints.maxWidth * 0.5,
+                                        ),
+                                        child: StatusCard(),
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ],
+                            ),
+                            TweenAnimationBuilder(
+                              tween: Tween<double>(begin: 0, end: 1),
+                              curve: Curves.easeInOut,
+                              duration: const Duration(seconds: 1),
+                              builder: (context, value, child) {
+                                return Opacity(
+                                  opacity: value,
+                                  child: ConstrainedBox(
+                                    constraints: BoxConstraints(
+                                      maxWidth:
+                                          isPortrait
+                                              ? constraints.maxWidth
+                                              : constraints.maxWidth * 0.5,
+                                      maxHeight: constraints.maxHeight,
+                                    ),
+                                    child: PlaneCard(),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+              ),
             ),
           ),
         );

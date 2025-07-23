@@ -7,7 +7,7 @@ import 'package:rift/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'dialog_manager.dart';
+import '../dialog_manager.dart';
 
 class RegisterForm extends HookConsumerWidget {
   const RegisterForm({super.key});
@@ -120,6 +120,7 @@ class RegisterForm extends HookConsumerWidget {
                 ),
                 obscureText: !showPassword.value,
                 autofillHints: [AutofillHints.password],
+                keyboardType: TextInputType.visiblePassword,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your password';
@@ -149,6 +150,8 @@ class RegisterForm extends HookConsumerWidget {
                   ),
                 ),
                 obscureText: !showPassword.value,
+                autofillHints: [AutofillHints.password],
+                keyboardType: TextInputType.visiblePassword,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
                     return 'Please enter your password';

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/background.dart';
-import 'package:rift/components/password_reset_form.dart';
+import 'package:rift/components/auth/password_reset_form.dart';
 
 class PasswordResetPage extends HookConsumerWidget {
   const PasswordResetPage({super.key});

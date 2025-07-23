@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/background.dart';
-import 'package:rift/components/verify_email_form.dart';
+import 'package:rift/components/auth/verify_email_form.dart';
 
 class VerifyEmailPage extends HookConsumerWidget {
   const VerifyEmailPage({super.key});

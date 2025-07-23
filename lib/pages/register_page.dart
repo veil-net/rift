@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/background.dart';
-import 'package:rift/components/register_form.dart';
+import 'package:rift/components/auth/register_form.dart';
 
 class RegisterPage extends HookConsumerWidget {
   const RegisterPage({super.key});

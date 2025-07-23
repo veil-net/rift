@@ -117,6 +117,8 @@ class PasswordResetForm extends HookConsumerWidget {
                           labelText: 'Password Reset Token',
                           prefixIcon: Icon(Icons.lock),
                         ),
+                        autofillHints: [AutofillHints.oneTimeCode],
+                        keyboardType: TextInputType.number,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter the password reset token';
@@ -142,6 +144,8 @@ class PasswordResetForm extends HookConsumerWidget {
                             ),
                           ),
                         ),
+                        autofillHints: [AutofillHints.password],
+                        keyboardType: TextInputType.visiblePassword,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Password is required';
@@ -169,6 +173,8 @@ class PasswordResetForm extends HookConsumerWidget {
                             ),
                           ),
                         ),
+                        autofillHints: [AutofillHints.password],
+                        keyboardType: TextInputType.visiblePassword,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Confirm Password is required';
@@ -198,6 +204,8 @@ class PasswordResetForm extends HookConsumerWidget {
                           labelText: 'Email',
                           icon: Icon(Icons.email),
                         ),
+                        autofillHints: [AutofillHints.email],
+                        keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.isEmpty) {
                             return 'Please enter your email';
