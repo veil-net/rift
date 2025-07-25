@@ -109,35 +109,50 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
   }
 
   Future<void> _loadState() async {
-    // Load name and plane from prefs
-    final prefs = await SharedPreferences.getInstance();
-    final name = prefs.getString('name');
-    final plane = prefs.getString('plane');
-    state = state.copyWith(name: name, plane: plane);
+    try {
+      // Load name and plane from prefs
+      final prefs = await SharedPreferences.getInstance();
+      final name = prefs.getString('name');
+      final plane = prefs.getString('plane');
+      state = state.copyWith(name: name, plane: plane);
 
-    // Load conflux from provider
-    if (name != null && plane != null) {
-      final conflux = await supabase
-          .from('conflux_details')
-          .select('*')
-          .eq('name', name)
-          .eq('plane', plane);
-      state = state.copyWith(
-        conflux: conflux.isNotEmpty ? Conflux.fromMap(conflux.first) : null,
-      );
+      // Load conflux from provider
+      if (name != null && plane != null) {
+        final conflux = await supabase
+            .from('conflux_details')
+            .select('*')
+            .eq('name', name)
+            .eq('plane', plane);
+        state = state.copyWith(
+          conflux: conflux.isNotEmpty ? Conflux.fromMap(conflux.first) : null,
+        );
+      }
+    } catch (e) {
+      log('Error loading state: $e');
     }
 
     // Start timer to refresh conflux every 5 seconds
     _timer = Timer.periodic(const Duration(seconds: 5), (timer) async {
-      ref.invalidate(confluxesProvider);
-      if (state.name != null && state.plane != null) {
-        final conflux = await supabase
-            .from('conflux_details')
-            .select('*')
-            .eq('name', state.name!)
-            .eq('plane', state.plane!);
-        if (conflux.isNotEmpty) {
-          state = state.copyWith(conflux: Conflux.fromMap(conflux.first));
+      try {
+        final prefs = await SharedPreferences.getInstance();
+        ref.invalidate(confluxesProvider);
+        if (state.name != null && state.plane != null) {
+          final conflux = await supabase
+              .from('conflux_details')
+              .select('*')
+              .eq('name', state.name!)
+              .eq('plane', state.plane!);
+          if (conflux.isNotEmpty) {
+            state = state.copyWith(conflux: Conflux.fromMap(conflux.first));
+          } else {
+            state = VeilNet(
+              name: state.name,
+              plane: state.plane,
+              conflux: null,
+              isBusy: state.isBusy,
+              shouldConnect: state.shouldConnect,
+            );
+          }
         } else {
           state = VeilNet(
             name: state.name,
@@ -147,21 +162,15 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
             shouldConnect: state.shouldConnect,
           );
         }
-      } else {
-        state = VeilNet(
-          name: state.name,
-          plane: state.plane,
-          conflux: null,
-          isBusy: state.isBusy,
-          shouldConnect: state.shouldConnect,
-        );
-      }
-      if (state.isBusy && state.shouldConnect == state.isConnected) {
-        state = state.copyWith(isBusy: false);
-        if (!state.isConnected) {
-          await prefs.remove('name');
-          await prefs.remove('plane');
+        if (state.isBusy && state.shouldConnect == state.isConnected) {
+          state = state.copyWith(isBusy: false);
+          if (!state.isConnected) {
+            await prefs.remove('name');
+            await prefs.remove('plane');
+          }
         }
+      } catch (e) {
+        log('Error refreshing conflux: $e');
       }
     });
   }
@@ -190,7 +199,6 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
         '/conflux?conflux_name=$name&plane_name=$plane&public=$public',
       );
       final anchorToken = response.data;
-      log('Anchor token: $anchorToken');
 
       switch (Platform.operatingSystem) {
         case "windows":
@@ -202,10 +210,7 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           await file.writeAsBytes(byteData.buffer.asUint8List());
           final arguments = ['-t', anchorToken.toString()];
 
-          final process = await Process.start(
-            file.path,
-            arguments,
-          );
+          final process = await Process.start(file.path, arguments);
           process.stdout.listen((event) {
             final text = stripAnsiCodes(String.fromCharCodes(event));
             ref.read(logProvider.notifier).update((logs) => [...logs, text]);

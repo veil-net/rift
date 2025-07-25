@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/dialog_manager.dart';
 import 'package:rift/providers/plane_provider.dart';
+import 'package:rift/providers/user_provider.dart';
 import 'package:rift/providers/veilnet_provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -25,6 +26,17 @@ class PlaneListTile extends HookConsumerWidget {
     }
 
     Future<void> connectToPlane(Plane plane) async {
+      final userProfile = await ref.read(userProfileProvider.future);
+      if (userProfile.mp <= 0) {
+        if (context.mounted) {
+          DialogManager.showDialog(
+            context,
+            'You do not have enough MP, please visit the Console to start self-hosting a portal or upgrade your service tier',
+            DialogType.error,
+          );
+        }
+        return;
+      }
       try {
         await veilNetNotifier.connect(Uuid().v4(), plane.name, plane.public);
       } catch (e) {
