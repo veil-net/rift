@@ -254,6 +254,12 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
     } catch (e) {
       state = state.copyWith(isBusy: false, shouldConnect: false);
       rethrow;
+    } finally {
+      Future.delayed(const Duration(seconds: 30), () {
+        if (state.isBusy) {
+          state = state.copyWith(isBusy: false);
+        }
+      });
     }
   }
 
@@ -291,6 +297,12 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
     } catch (e) {
       state = state.copyWith(isBusy: false, shouldConnect: true);
       rethrow;
+    } finally {
+      Future.delayed(const Duration(seconds: 30), () {
+        if (state.isBusy) {
+          state = state.copyWith(isBusy: false);
+        }
+      });
     }
   }
 }
