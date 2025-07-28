@@ -185,7 +185,10 @@ class Conflux {
 
 final confluxesProvider = FutureProvider<List<Conflux>>((ref) async {
   ref.watch(userProvider);
-  final confluxes = await supabase.from('conflux_details').select('*');
+  final confluxes = await supabase
+      .from('conflux_details')
+      .select('*')
+      .order('created_at');
   return confluxes.map((json) => Conflux.fromMap(json)).toList();
 });
 

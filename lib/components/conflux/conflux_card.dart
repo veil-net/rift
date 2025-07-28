@@ -9,6 +9,16 @@ class ConfluxCard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    String getFlagEmoji(String region) {
+      if (region.length != 2) return '';
+      final base = 0x1F1E6;
+      final chars = region.toUpperCase().codeUnits;
+      return String.fromCharCodes([
+        base + (chars[0] - 0x41),
+        base + (chars[1] - 0x41),
+      ]);
+    }
+
     return TweenAnimationBuilder(
       tween: Tween<double>(begin: 0, end: 1),
       duration: const Duration(seconds: 1),
@@ -24,9 +34,9 @@ class ConfluxCard extends HookConsumerWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     ListTile(
-                      leading: Icon(
-                        conflux.portal ? Icons.cyclone : Icons.electric_bolt,
-                        color: Theme.of(context).colorScheme.secondary,
+                      leading: Text(
+                        getFlagEmoji(conflux.region),
+                        style: TextStyle(fontSize: 24),
                       ),
                       title: Text(
                         conflux.name,
@@ -36,7 +46,7 @@ class ConfluxCard extends HookConsumerWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       subtitle: Text(
-                        conflux.region,
+                        conflux.tag ?? 'No tag',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.secondary,
                         ),

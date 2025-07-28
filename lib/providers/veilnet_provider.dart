@@ -187,6 +187,7 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
     }
 
     if (state.isConnected) {
+      state = state.copyWith(shouldConnect: true);
       throw Exception('Please disconnect first');
     }
 
@@ -269,8 +270,10 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
     }
 
     if (!state.isConnected) {
+      state = state.copyWith(shouldConnect: false);
       throw Exception('Already disconnected');
     }
+
     state = state.copyWith(isBusy: true, shouldConnect: false);
     try {
       switch (Platform.operatingSystem) {
@@ -292,7 +295,6 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           }
           break;
       }
-      state = state.copyWith(shouldConnect: false);
       ref.read(logProvider.notifier).update((logs) => []);
     } catch (e) {
       state = state.copyWith(isBusy: false, shouldConnect: true);
