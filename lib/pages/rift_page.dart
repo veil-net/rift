@@ -24,21 +24,23 @@ class RiftPage extends HookConsumerWidget {
               data: (data) {
                 final rifts =
                     data.where((conflux) => conflux.portal == false).toList();
-                return Wrap(
-                  children:
-                      rifts
-                          .map(
-                            (conflux) => ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth:
-                                    isPortrait
-                                        ? constraints.maxWidth
-                                        : constraints.maxWidth / 2,
+                return SingleChildScrollView(
+                  child: Wrap(
+                    children:
+                        rifts
+                            .map(
+                              (conflux) => ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      isPortrait
+                                          ? constraints.maxWidth
+                                          : constraints.maxWidth / 2,
+                                ),
+                                child: ConfluxCard(conflux: conflux),
                               ),
-                              child: ConfluxCard(conflux: conflux),
-                            ),
-                          )
-                          .toList(),
+                            )
+                            .toList(),
+                  ),
                 );
               },
               error: (error, stackTrace) => Text('Error: $error'),

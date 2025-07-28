@@ -24,21 +24,23 @@ class PortalPage extends HookConsumerWidget {
               data: (data) {
                 final portals =
                     data.where((conflux) => conflux.portal == true).toList();
-                return Wrap(
-                  children:
-                      portals
-                          .map(
-                            (conflux) => ConstrainedBox(
-                              constraints: BoxConstraints(
-                                maxWidth:
-                                    isPortrait
-                                        ? constraints.maxWidth
-                                        : constraints.maxWidth / 2,
+                return SingleChildScrollView(
+                  child: Wrap(
+                    children:
+                        portals
+                            .map(
+                              (conflux) => ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      isPortrait
+                                          ? constraints.maxWidth
+                                          : constraints.maxWidth / 2,
+                                ),
+                                child: ConfluxCard(conflux: conflux),
                               ),
-                              child: ConfluxCard(conflux: conflux),
-                            ),
-                          )
-                          .toList(),
+                            )
+                            .toList(),
+                  ),
                 );
               },
               error: (error, stackTrace) => Text('Error: $error'),
