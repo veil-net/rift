@@ -6,6 +6,7 @@ import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/pages/home_page.dart';
 import 'package:rift/pages/landing_page.dart';
 import 'package:rift/pages/login_page.dart';
+import 'package:rift/pages/notification_page.dart';
 import 'package:rift/pages/password_reset_page.dart';
 import 'package:rift/pages/portal_page.dart';
 import 'package:rift/pages/register_page.dart';
@@ -31,7 +32,7 @@ Future<void> main() async {
   await Supabase.initialize(
     url: 'https://supabase.veilnet.org',
     anonKey:
-        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InptYnB2aHZtbmd5cnJzamdxcGltIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDc4ODgxMzAsImV4cCI6MjA2MzQ2NDEzMH0.hXvCPaf1AlbLMN0AySzSWk6ML7ZGkgyh1qIEwCqZjMA',
+        'sb_publishable_eNJQSWUp-w9RTIs2V4UDHw_ILjAP_xr',
   );
 
   runApp(const ProviderScope(child: MyApp()));
@@ -90,6 +91,23 @@ class MyApp extends HookConsumerWidget {
           builder: (context, state) => const PortalPage(),
         ),
         GoRoute(path: '/rift', builder: (context, state) => const RiftPage()),
+        GoRoute(
+          path: '/notifications',
+          builder: (context, state) => const NotificationPage(),
+        ),
+        GoRoute(
+          path: '/callback',
+          builder: (context, state) => const LandingPage(),
+          redirect: (context, state) async {
+            // Check if user is logged in
+            await Future.delayed(const Duration(seconds: 1));
+            final userState = ref.read(userProvider);
+            if (userState.session != null) {
+              return '/home';
+            }
+            return '/login';
+          },
+        ),
       ],
     );
 

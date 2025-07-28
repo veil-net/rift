@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:rift/components/dialog_manager.dart';
 import 'package:rift/main.dart';
+import 'package:rift/providers/notification_provider.dart';
 import 'package:rift/providers/user_provider.dart';
 import 'package:rift/providers/veilnet_provider.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -13,6 +15,8 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final userState = ref.watch(userProvider);
     final serviceTier = ref.watch(userServiceTierProvider);
+    final notifications = ref.watch(notificationProvider);
+    final veilnetState = ref.watch(veilnetProvider);
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
@@ -39,6 +43,45 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
         loading: () => const ActionChip(label: Text('Loading...')),
       ),
       actions: [
+        notifications.when(
+          data:
+              (data) => IconButton(
+                onPressed:
+                    data.isEmpty
+                        ? () {
+                          DialogManager.showDialog(
+                            context,
+                            "No notifications",
+                            DialogType.info,
+                          );
+                        }
+                        : () {
+                          context.push('/notifications');
+                        },
+                icon: Icon(
+                  Icons.notifications,
+                  color:
+                      data.isEmpty
+                          ? Colors.grey
+                          : Theme.of(context).colorScheme.primary,
+                ),
+              ),
+          error:
+              (error, stackTrace) => IconButton(
+                onPressed: () {
+                  DialogManager.showDialog(
+                    context,
+                    "Failed to load notifications",
+                    DialogType.error,
+                  );
+                },
+                icon: Icon(
+                  Icons.notifications,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+          loading: () => const CircularProgressIndicator(),
+        ),
         TextButton(
           onPressed: () {
             launchUrl(Uri.parse('https://www.veilnet.org'));
@@ -67,14 +110,24 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
           ),
         ),
         IconButton(
-          onPressed: () async {
-            await supabase.auth.signOut();
-            ref.read(veilnetProvider.notifier).disconnect();
-            if (context.mounted) {
-              context.go('/login');
-            }
-          },
-          icon: const Icon(Icons.logout),
+          onPressed:
+              veilnetState.isBusy
+                  ? null
+                  : () async {
+                    await supabase.auth.signOut();
+                    if (veilnetState.isConnected) {
+                      ref.read(veilnetProvider.notifier).disconnect();
+                    }
+                    if (context.mounted) {
+                      context.go('/login');
+                    }
+                  },
+          icon: Icon(
+            Icons.logout,
+            color: veilnetState.isBusy
+                ? Colors.grey
+                : Theme.of(context).colorScheme.primary,
+          ),
         ),
       ],
       shape: const RoundedRectangleBorder(

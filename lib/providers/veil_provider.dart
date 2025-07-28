@@ -27,7 +27,7 @@ class Veil {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
-      'created_at': createdAt.toIso8601String(),
+      'created_at': createdAt.toUtc().toIso8601String(),
       'name': name,
       'region': region,
     };

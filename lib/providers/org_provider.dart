@@ -193,7 +193,7 @@ class Org {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'id': id,
-      'created_at': created_at.toIso8601String(),
+      'created_at': created_at.toUtc().toIso8601String(),
       'user_id': user_id,
       'name': name,
       'website': website,
@@ -294,7 +294,7 @@ class Team {
   Map<String, dynamic> toMap() {
     return <String, dynamic>{
       'id': id,
-      'created_at': created_at.toIso8601String(),
+      'created_at': created_at.toUtc().toIso8601String(),
       'user_id': user_id,
       'organisation_id': organisation_id,
       'name': name,

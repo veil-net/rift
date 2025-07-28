@@ -111,9 +111,7 @@ class LoginForm extends HookConsumerWidget {
                         ? const SizedBox(
                           width: 20,
                           height: 20,
-                          child: CircularProgressIndicator(
-                            color: Colors.white,
-                          ),
+                          child: CircularProgressIndicator(color: Colors.white),
                         )
                         : const Text('Login'),
               ),
