@@ -209,7 +209,7 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           final tempDir = await getTemporaryDirectory();
           final file = File('${tempDir.path}/veilnet-conflux.exe');
           await file.writeAsBytes(byteData.buffer.asUint8List());
-          final arguments = ['-t', anchorToken.toString()];
+          final arguments = ['up', '-t', anchorToken.toString()];
 
           final process = await Process.start(file.path, arguments);
           process.stdout.listen((event) {
