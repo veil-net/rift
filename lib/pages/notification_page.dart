@@ -15,7 +15,7 @@ class NotificationPage extends HookConsumerWidget {
         backgroundColor: Colors.transparent,
         appBar: VeilNetAppBar(
         ),
-        body: const NotificationList(),
+        body: SafeArea(child: const NotificationList()),
         floatingActionButton: FloatingActionButton(
           onPressed: () {
             context.go('/home');

@@ -20,31 +20,33 @@ class RiftPage extends HookConsumerWidget {
           child: Scaffold(
             backgroundColor: Colors.transparent,
             appBar: VeilNetAppBar(),
-            body: conflux.when(
-              data: (data) {
-                final rifts =
-                    data.where((conflux) => conflux.portal == false).toList();
-                return SingleChildScrollView(
-                  child: Wrap(
-                    children:
-                        rifts
-                            .map(
-                              (conflux) => ConstrainedBox(
-                                constraints: BoxConstraints(
-                                  maxWidth:
-                                      isPortrait
-                                          ? constraints.maxWidth
-                                          : constraints.maxWidth / 2,
+            body: SafeArea(
+              child: conflux.when(
+                data: (data) {
+                  final rifts =
+                      data.where((conflux) => conflux.portal == false).toList();
+                  return SingleChildScrollView(
+                    child: Wrap(
+                      children:
+                          rifts
+                              .map(
+                                (conflux) => ConstrainedBox(
+                                  constraints: BoxConstraints(
+                                    maxWidth:
+                                        isPortrait
+                                            ? constraints.maxWidth
+                                            : constraints.maxWidth / 2,
+                                  ),
+                                  child: ConfluxCard(conflux: conflux),
                                 ),
-                                child: ConfluxCard(conflux: conflux),
-                              ),
-                            )
-                            .toList(),
-                  ),
-                );
-              },
-              error: (error, stackTrace) => Text('Error: $error'),
-              loading: () => const Center(child: CircularProgressIndicator()),
+                              )
+                              .toList(),
+                    ),
+                  );
+                },
+                error: (error, stackTrace) => Text('Error: $error'),
+                loading: () => const Center(child: CircularProgressIndicator()),
+              ),
             ),
             floatingActionButton: FloatingActionButton(
               onPressed: () {

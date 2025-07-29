@@ -102,6 +102,7 @@ class VeilNet {
 
 class VeilNetNotifier extends StateNotifier<VeilNet> {
   final Ref ref;
+  Timer? busyStateResetTimer;
   Timer? _timer;
   VeilNetNotifier(this.ref)
     : super(VeilNet(isBusy: false, shouldConnect: false)) {
@@ -115,9 +116,14 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
       final name = prefs.getString('name');
       final plane = prefs.getString('plane');
       state = state.copyWith(name: name, plane: plane);
+      final confluxJson = prefs.getString('conflux');
+      if (confluxJson != null) {
+        final confluxState = Conflux.fromJson(confluxJson);
+        state = state.copyWith(conflux: confluxState);
+      }
 
       // Load conflux from provider
-      if (name != null && plane != null) {
+      if (name != null && plane != null && confluxJson == null) {
         final conflux = await supabase
             .from('conflux_details')
             .select('*')
@@ -143,7 +149,9 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
               .eq('name', state.name!)
               .eq('plane', state.plane!);
           if (conflux.isNotEmpty) {
-            state = state.copyWith(conflux: Conflux.fromMap(conflux.first));
+            final confluxState = Conflux.fromMap(conflux.first);
+            state = state.copyWith(conflux: confluxState);
+            await prefs.setString('conflux', confluxState.toJson());
           } else {
             state = VeilNet(
               name: state.name,
@@ -163,10 +171,12 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           );
         }
         if (state.isBusy && state.shouldConnect == state.isConnected) {
+          busyStateResetTimer?.cancel();
           state = state.copyWith(isBusy: false);
           if (!state.isConnected) {
             await prefs.remove('name');
             await prefs.remove('plane');
+            await prefs.remove('conflux');
           }
         }
       } catch (e) {
@@ -178,6 +188,7 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
   @override
   void dispose() {
     _timer?.cancel();
+    busyStateResetTimer?.cancel();
     super.dispose();
   }
 
@@ -256,7 +267,8 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
       state = state.copyWith(isBusy: false, shouldConnect: false);
       rethrow;
     } finally {
-      Future.delayed(const Duration(seconds: 30), () {
+      busyStateResetTimer?.cancel();
+      busyStateResetTimer = Timer(const Duration(seconds: 30), () {
         if (state.isBusy) {
           state = state.copyWith(isBusy: false);
         }
@@ -300,7 +312,8 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
       state = state.copyWith(isBusy: false, shouldConnect: true);
       rethrow;
     } finally {
-      Future.delayed(const Duration(seconds: 30), () {
+      busyStateResetTimer?.cancel();
+      busyStateResetTimer = Timer(const Duration(seconds: 30), () {
         if (state.isBusy) {
           state = state.copyWith(isBusy: false);
         }
