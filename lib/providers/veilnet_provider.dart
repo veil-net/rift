@@ -170,6 +170,9 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
             shouldConnect: state.shouldConnect,
           );
         }
+        if (!state.isBusy && state.shouldConnect != state.isConnected) {
+          state = state.copyWith(isBusy: true);
+        }
         if (state.isBusy && state.shouldConnect == state.isConnected) {
           busyStateResetTimer?.cancel();
           state = state.copyWith(isBusy: false);
