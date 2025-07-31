@@ -97,7 +97,7 @@ class VeilNet {
     return name.hashCode ^ plane.hashCode ^ conflux.hashCode;
   }
 
-  bool get isConnected => conflux != null && conflux!.signature != null;
+  bool get isConnected => conflux != null;
 }
 
 class VeilNetNotifier extends StateNotifier<VeilNet> {
@@ -170,22 +170,19 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
             shouldConnect: state.shouldConnect,
           );
         }
-        if (!state.isBusy && state.shouldConnect != state.isConnected) {
-          state = state.copyWith(isBusy: true);
-          busyStateResetTimer?.cancel();
-          busyStateResetTimer = Timer(const Duration(seconds: 30), () {
-            if (state.isBusy) {
-              state = state.copyWith(isBusy: false);
+        if (state.isBusy) {
+          if (state.shouldConnect == state.isConnected) {
+            busyStateResetTimer?.cancel();
+            state = state.copyWith(isBusy: false);
+            if (!state.isConnected) {
+              await prefs.remove('name');
+              await prefs.remove('plane');
+              await prefs.remove('conflux');
             }
-          });
-        }
-        if (state.isBusy && state.shouldConnect == state.isConnected) {
-          busyStateResetTimer?.cancel();
-          state = state.copyWith(isBusy: false);
-          if (!state.isConnected) {
-            await prefs.remove('name');
-            await prefs.remove('plane');
-            await prefs.remove('conflux');
+          }
+        } else {
+          if (state.shouldConnect != state.isConnected) {
+            state = state.copyWith(isBusy: true);
           }
         }
       } catch (e) {
