@@ -172,6 +172,12 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
         }
         if (!state.isBusy && state.shouldConnect != state.isConnected) {
           state = state.copyWith(isBusy: true);
+          busyStateResetTimer?.cancel();
+          busyStateResetTimer = Timer(const Duration(seconds: 30), () {
+            if (state.isBusy) {
+              state = state.copyWith(isBusy: false);
+            }
+          });
         }
         if (state.isBusy && state.shouldConnect == state.isConnected) {
           busyStateResetTimer?.cancel();
