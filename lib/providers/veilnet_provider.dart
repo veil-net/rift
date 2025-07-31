@@ -295,6 +295,10 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           if (!state.isConnected) {
             throw Exception('Not connected');
           }
+          final api = ref.read(apiProvider);
+          await api.delete(
+            '/conflux?conflux_name=${state.name}&plane_name=${state.plane}',
+          );
           state.process?.kill(ProcessSignal.sigterm);
           state = state.copyWith(process: null);
           break;
