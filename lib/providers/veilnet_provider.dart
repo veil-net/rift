@@ -180,10 +180,6 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
               await prefs.remove('conflux');
             }
           }
-        } else {
-          if (state.shouldConnect != state.isConnected) {
-            state = state.copyWith(isBusy: true);
-          }
         }
       } catch (e) {
         log('Error refreshing conflux: $e');
