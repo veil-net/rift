@@ -105,7 +105,7 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
   Timer? busyStateResetTimer;
   Timer? _timer;
   VeilNetNotifier(this.ref)
-    : super(VeilNet(isBusy: false, shouldConnect: false)) {
+    : super(VeilNet(isBusy: true, shouldConnect: true)) {
     _loadState();
   }
 
@@ -116,14 +116,9 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
       final name = prefs.getString('name');
       final plane = prefs.getString('plane');
       state = state.copyWith(name: name, plane: plane);
-      final confluxJson = prefs.getString('conflux');
-      if (confluxJson != null) {
-        final confluxState = Conflux.fromJson(confluxJson);
-        state = state.copyWith(conflux: confluxState);
-      }
 
       // Load conflux from provider
-      if (name != null && plane != null && confluxJson == null) {
+      if (name != null && plane != null) {
         final conflux = await supabase
             .from('conflux_details')
             .select('*')
@@ -133,6 +128,12 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           conflux: conflux.isNotEmpty ? Conflux.fromMap(conflux.first) : null,
         );
       }
+      if (state.conflux != null) {
+        state = state.copyWith(shouldConnect: true);
+      } else {
+        state = state.copyWith(shouldConnect: false);
+      }
+      state = state.copyWith(isBusy: false);
     } catch (e) {
       log('Error loading state: $e');
     }
@@ -151,7 +152,6 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           if (conflux.isNotEmpty) {
             final confluxState = Conflux.fromMap(conflux.first);
             state = state.copyWith(conflux: confluxState);
-            await prefs.setString('conflux', confluxState.toJson());
           } else {
             state = VeilNet(
               name: state.name,
@@ -177,7 +177,6 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
             if (!state.isConnected) {
               await prefs.remove('name');
               await prefs.remove('plane');
-              await prefs.remove('conflux');
             }
           }
         }
