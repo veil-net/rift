@@ -42,7 +42,7 @@ class StatusCard extends HookConsumerWidget {
                   veilNet.isBusy
                       ? LinearProgressIndicator()
                       : veilNet.isConnected
-                      ? veilNet.conflux?.cidr != null
+                      ? veilNet.conflux!.cidr != null
                           ? Text(
                             veilNet.conflux!.cidr!,
                             style: TextStyle(
@@ -60,12 +60,19 @@ class StatusCard extends HookConsumerWidget {
                   veilNet.isBusy
                       ? null
                       : veilNet.isConnected
-                      ? IconButton(
-                        onPressed: () async {
-                          await ref.read(veilnetProvider.notifier).disconnect();
-                        },
-                        icon: Icon(Icons.power_settings_new, color: Colors.red),
-                      )
+                      ? veilNet.conflux!.cidr != null
+                          ? IconButton(
+                            onPressed: () async {
+                              await ref
+                                  .read(veilnetProvider.notifier)
+                                  .disconnect();
+                            },
+                            icon: Icon(
+                              Icons.power_settings_new,
+                              color: Colors.red,
+                            ),
+                          )
+                          : null
                       : null,
             ),
           ],
