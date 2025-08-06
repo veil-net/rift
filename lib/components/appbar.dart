@@ -116,7 +116,17 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
                   : () async {
                     await supabase.auth.signOut();
                     if (veilnetState.isConnected) {
-                      ref.read(veilnetProvider.notifier).disconnect();
+                      try {
+                        await ref.read(veilnetProvider.notifier).disconnect();
+                      } catch (e) {
+                        if (context.mounted) {
+                          DialogManager.showDialog(
+                            context,
+                            e.toString(),
+                            DialogType.error,
+                          );
+                        }
+                      }
                     }
                     if (context.mounted) {
                       context.go('/login');
@@ -124,9 +134,10 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
                   },
           icon: Icon(
             Icons.logout,
-            color: veilnetState.isBusy
-                ? Colors.grey
-                : Theme.of(context).colorScheme.primary,
+            color:
+                veilnetState.isBusy
+                    ? Colors.grey
+                    : Theme.of(context).colorScheme.primary,
           ),
         ),
       ],

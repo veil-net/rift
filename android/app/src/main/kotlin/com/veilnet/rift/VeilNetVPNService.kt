@@ -2,15 +2,13 @@ package com.veilnet.rift
 
 import android.content.Intent
 import android.net.VpnService
-import android.os.Build
 import android.os.ParcelFileDescriptor
-import android.system.OsConstants
 import android.util.Log
-import androidx.annotation.RequiresApi
 import kotlinx.coroutines.*
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import veilnet.Veilnet
+import veilnet.Anchor
+import veilnet.Veilnet.newAnchor
 
 class VeilNet : VpnService() {
 
@@ -18,17 +16,24 @@ class VeilNet : VpnService() {
         @Volatile
         private var instance: VeilNet? = null
 
-        fun stopVeilNet(): Boolean {
+        fun stop(): Boolean {
             val service = instance ?: return false
-            service.stop()
+            service.anchorScope.launch {
+                service.egress.cancel()
+                service.ingress.cancel()
+                service.anchor?.stop()
+                service.tunInterface?.close()
+                service.stopSelf()
+            }
             return true
         }
     }
 
     private var tunInterface: ParcelFileDescriptor? = null
-    private var anchor: veilnet.Anchor? = null
-    private val vpnScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
-    private val stopScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var anchor: Anchor? = null
+    private var anchorScope: CoroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob())
+    private var egress: CoroutineScope = CoroutineScope(Dispatchers.IO)
+    private var ingress: CoroutineScope = CoroutineScope(Dispatchers.IO)
 
     override fun onCreate() {
         super.onCreate()
@@ -36,139 +41,106 @@ class VeilNet : VpnService() {
     }
 
     override fun onDestroy() {
-        vpnScope.cancel()
-        stopScope.cancel()
-        if (tunInterface != null) {
-            tunInterface!!.close()
-            tunInterface = null
-        }
-        if (anchor != null) {
-            anchor!!.stop()
-            anchor = null
-        }
+        anchorScope.cancel()
         instance = null
         super.onDestroy()
     }
 
-    @RequiresApi(Build.VERSION_CODES.O)
-    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        val guardianUrl = intent?.getStringExtra("guardian_url")
-        val anchorToken = intent?.getStringExtra("anchor_token")
+    override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
+        val guardian = intent.getStringExtra("guardian")
+        val token = intent.getStringExtra("token")
 
-        if (guardianUrl == null || anchorToken == null) {
-            Log.e("VeilNet", "Guardian URL or anchor token is missing")
+        if (guardian == null || token == null) {
+            Log.e("VeilNet", "Guardian Url or VeilNet token is missing")
             stopSelf()
             return START_NOT_STICKY
         }
 
-        vpnScope.launch {
+        anchorScope.launch {
             try {
-                anchor = Veilnet.newAnchor()
-                anchor!!.start(guardianUrl, anchorToken, false)
+                anchor = newAnchor()
             } catch (e: Exception) {
-                Log.e("VeilNet", "VPN start failed", e)
+                Log.e("VeilNet", "Failed to create anchor instance")
                 stopSelf()
                 return@launch
             }
 
-            val cidr = try {
-                anchor!!.cidr
+            try {
+                anchor!!.start(guardian, token, false)
             } catch (e: Exception) {
-                Log.e("VeilNet", "Failed to get CIDR", e)
+                Log.e("VeilNet", "Failed to start anchor")
                 stopSelf()
                 return@launch
             }
 
-            val (ip, mask) = cidr.split("/")
-            val builder = this@VeilNet.Builder()
-                .setSession("VeilNet")
-                .addAddress(ip, mask.toInt())
-                .addDnsServer("1.1.1.1")
-                .addRoute("0.0.0.0", 0)
-                .allowFamily(OsConstants.AF_INET)
-                .setMtu(1500)
-                .addDisallowedApplication(applicationContext.packageName)
-
-            tunInterface = builder.establish()
-            if (tunInterface == null) {
-                Log.e("VeilNet", "Failed to establish TUN interface")
+            try {
+                val cidr = anchor!!.cidr
+                val (ip, mask) = cidr!!.split("/")
+                val builder = Builder()
+                    .setSession("VeilNet")
+                    .addAddress(ip, mask.toInt())
+                    .addDnsServer("1.1.1.1")
+                    .addRoute("0.0.0.0", 0)
+                    .setMtu(1500)
+                    .addDisallowedApplication(applicationContext.packageName)
+                tunInterface = builder.establish()
+            } catch (e: Exception) {
+                Log.e("VeilNet", "Failed to create tunnel interface")
                 stopSelf()
                 return@launch
             }
-
-            launch { egress() }
-            launch { ingress() }
-            launch { liveliness() }
+            startEgress()
+            startIngress()
+            if (anchor?.isAlive == false) {
+                stopSelf()
+                return@launch
+            }
         }
-
-        return START_STICKY
+        return START_REDELIVER_INTENT
     }
 
-
-    private fun stop() {
-        try {
-            stopScope.launch {
-                vpnScope.cancel()
-                if (tunInterface != null) {
-                    tunInterface!!.close()
-                    tunInterface = null
-                }
-                if (anchor != null) {
-                    anchor!!.stop()
-                    anchor = null
-                }
-                stopSelf()
-            }
-        } catch (e: Exception) {
-            Log.w("VeilNet", "Failed to stop VPN service", e)
-            throw e
-        }
-    }
-
-    private suspend fun egress() = withContext(Dispatchers.IO) {
-        tunInterface?.fileDescriptor?.let { fd ->
-            FileInputStream(fd).use { input ->
-                val buffer = ByteArray(1500)
-                while (isActive) {
-                    try {
-                        val len = input.read(buffer)
-                        if (len > 0) {
-                            anchor?.writePacket(buffer, len.toLong())
+    private fun startEgress() {
+        egress.launch {
+            try {
+                FileInputStream(tunInterface?.fileDescriptor).use { tunnelInput ->
+                    val buffer = ByteArray(1500)
+                    while (isActive) {  // Check if coroutine is still active
+                        try {
+                            val size = tunnelInput.read(buffer)
+                            if (size > 0) {
+                                anchor?.writePacket(buffer, size.toLong())
+                            }
+                        } catch (e: Exception) {
+                            Log.e("VeilNet", "Egress has encountered an error: ${e.message}")
                         }
-                    } catch (e: Exception) {
-                        Log.e("VeilNet", "Egress error", e)
                     }
                 }
+            } catch (e: Exception) {
+                Log.e("VeilNet", "Failed to start egress: ${e.message}")
+                stopSelf()
             }
         }
     }
 
-    private suspend fun ingress() = withContext(Dispatchers.IO) {
-        tunInterface?.fileDescriptor?.let { fd ->
-            FileOutputStream(fd).use { output ->
-                val buffer = ByteArray(1500)
-                while (isActive) {
-                    try {
-                        val len = anchor?.readPacket(buffer) ?: break
-                        if (len > 0) {
-                            output.write(buffer, 0, len.toInt())
-                            output.flush()
+    private fun startIngress() {
+        ingress.launch {
+            try {
+                FileOutputStream(tunInterface?.fileDescriptor).use { tunnelOutput ->
+                    val buffer = ByteArray(1500)
+                    while (isActive) {  // Check if coroutine is still active
+                        try {
+                            val size = anchor?.readPacket(buffer)
+                            if (size != null && size > 0) {
+                                tunnelOutput.write(buffer, 0, size.toInt())
+                            }
+                        } catch (e: Exception) {
+                            Log.e("VeilNet", "Ingress has encountered an error: ${e.message}")
                         }
-                    } catch (e: Exception) {
-                        Log.e("VeilNet", "Ingress error", e)
                     }
                 }
-            }
-        }
-    }
-
-    private suspend fun liveliness() = withContext(Dispatchers.IO) {
-        while (isActive) {
-            val isAnchorAlive = anchor?.isAlive ?: false
-            if (!isAnchorAlive) {
-                Log.w("VeilNet", "Anchor is no longer alive. Stopping VPN service.")
-                stop() // this stops the VPN and the anchor
-                break
+            } catch (e: Exception) {
+                Log.e("VeilNet", "Failed to start ingress: ${e.message}")
+                stopSelf()
             }
         }
     }

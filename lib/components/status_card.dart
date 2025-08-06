@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:rift/components/dialog_manager.dart';
 import 'package:rift/providers/veilnet_provider.dart';
 
 class StatusCard extends HookConsumerWidget {
@@ -63,9 +64,17 @@ class StatusCard extends HookConsumerWidget {
                       ? veilNet.conflux!.cidr != null
                           ? IconButton(
                             onPressed: () async {
-                              await ref
-                                  .read(veilnetProvider.notifier)
-                                  .disconnect();
+                              try{
+                                await ref
+                                    .read(veilnetProvider.notifier)
+                                    .disconnect();
+                              } catch (e) {
+                                DialogManager.showDialog(
+                                  context,
+                                  e.toString(),
+                                  DialogType.error,
+                                );
+                              }
                             },
                             icon: Icon(
                               Icons.power_settings_new,

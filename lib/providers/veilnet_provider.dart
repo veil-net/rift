@@ -12,7 +12,7 @@ import 'package:rift/providers/api_provider.dart';
 import 'package:rift/providers/conflux_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-const _vpnChannel = MethodChannel('veilnet/channel');
+const _vpnChannel = MethodChannel('veilnet/service');
 
 final logProvider = StateProvider<List<String>>((ref) => []);
 
@@ -238,7 +238,7 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
         case "android":
           // Request VPN permission first
           final granted = await _vpnChannel.invokeMethod<bool>(
-            'requestVpnPermission',
+            'requestPermission',
           );
           if (granted != true) {
             throw Exception('VPN permission was not granted by the user');
@@ -246,13 +246,8 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
 
           // Then start the VPN service
           final success = await _vpnChannel.invokeMethod<bool>(
-            'startVpnService',
-            {
-              'config': {
-                'guardian_url': api.options.baseUrl,
-                'anchor_token': anchorToken,
-              },
-            },
+            'start',
+            {"guardian": api.options.baseUrl, "token": anchorToken},
           );
 
           if (success != true) {
@@ -306,7 +301,7 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           if (!state.isConnected) {
             throw Exception('Invalid daemon state');
           }
-          final success = await _vpnChannel.invokeMethod<bool>("shutdownVpn");
+          final success = await _vpnChannel.invokeMethod<bool>("stop");
           if (success != true) {
             throw Exception("Failed to shutdown VPN on Android");
           }
