@@ -92,7 +92,7 @@ class VeilNet : VpnService() {
             startEgress()
             startIngress()
             if (anchor?.isAlive == false) {
-                stopSelf()
+                stop()
                 return@launch
             }
         }
