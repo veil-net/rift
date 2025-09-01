@@ -69,11 +69,13 @@ class StatusCard extends HookConsumerWidget {
                                     .read(veilnetProvider.notifier)
                                     .disconnect();
                               } catch (e) {
+                                if (context.mounted) {
                                 DialogManager.showDialog(
                                   context,
-                                  e.toString(),
-                                  DialogType.error,
-                                );
+                                    e.toString(),
+                                    DialogType.error,
+                                  );
+                                }
                               }
                             },
                             icon: Icon(
