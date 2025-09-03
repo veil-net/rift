@@ -110,7 +110,7 @@ abstract class _$ConfluxInstanceName extends $AsyncNotifier<String?> {
 const confluxInstanceProvider = ConfluxInstanceProvider._();
 
 final class ConfluxInstanceProvider
-    extends $StreamNotifierProvider<ConfluxInstance, Conflux?> {
+    extends $AsyncNotifierProvider<ConfluxInstance, Conflux?> {
   const ConfluxInstanceProvider._()
     : super(
         from: null,
@@ -130,10 +130,10 @@ final class ConfluxInstanceProvider
   ConfluxInstance create() => ConfluxInstance();
 }
 
-String _$confluxInstanceHash() => r'558b7f0acc22759e0b2178a531f428ee74018eb9';
+String _$confluxInstanceHash() => r'91871f30cafc019febc3b81512fd512891525903';
 
-abstract class _$ConfluxInstance extends $StreamNotifier<Conflux?> {
-  Stream<Conflux?> build();
+abstract class _$ConfluxInstance extends $AsyncNotifier<Conflux?> {
+  FutureOr<Conflux?> build();
   @$mustCallSuper
   @override
   void runBuild() {
@@ -155,7 +155,7 @@ abstract class _$ConfluxInstance extends $StreamNotifier<Conflux?> {
 const confluxInstanceSessionProvider = ConfluxInstanceSessionProvider._();
 
 final class ConfluxInstanceSessionProvider
-    extends $StreamNotifierProvider<ConfluxInstanceSession, ConfluxSession?> {
+    extends $AsyncNotifierProvider<ConfluxInstanceSession, ConfluxSession?> {
   const ConfluxInstanceSessionProvider._()
     : super(
         from: null,
@@ -176,11 +176,11 @@ final class ConfluxInstanceSessionProvider
 }
 
 String _$confluxInstanceSessionHash() =>
-    r'5d1f5017a897c57489ee864ec8af4d13ceb76905';
+    r'1dd53dc493d52b69c74e01da33b67bee4bd65ea7';
 
 abstract class _$ConfluxInstanceSession
-    extends $StreamNotifier<ConfluxSession?> {
-  Stream<ConfluxSession?> build();
+    extends $AsyncNotifier<ConfluxSession?> {
+  FutureOr<ConfluxSession?> build();
   @$mustCallSuper
   @override
   void runBuild() {
@@ -202,7 +202,7 @@ abstract class _$ConfluxInstanceSession
 const confluxInstanceIpLeaseProvider = ConfluxInstanceIpLeaseProvider._();
 
 final class ConfluxInstanceIpLeaseProvider
-    extends $StreamNotifierProvider<ConfluxInstanceIpLease, IpLease?> {
+    extends $AsyncNotifierProvider<ConfluxInstanceIpLease, IpLease?> {
   const ConfluxInstanceIpLeaseProvider._()
     : super(
         from: null,
@@ -223,10 +223,10 @@ final class ConfluxInstanceIpLeaseProvider
 }
 
 String _$confluxInstanceIpLeaseHash() =>
-    r'46189c74876b4bc38ac1b7a484a4ae9de96a974c';
+    r'9c70e4ea5bb6b4e811170a8c15d71bdab502f0e2';
 
-abstract class _$ConfluxInstanceIpLease extends $StreamNotifier<IpLease?> {
-  Stream<IpLease?> build();
+abstract class _$ConfluxInstanceIpLease extends $AsyncNotifier<IpLease?> {
+  FutureOr<IpLease?> build();
   @$mustCallSuper
   @override
   void runBuild() {
@@ -237,6 +237,59 @@ abstract class _$ConfluxInstanceIpLease extends $StreamNotifier<IpLease?> {
             as $ClassProviderElement<
               AnyNotifier<AsyncValue<IpLease?>, IpLease?>,
               AsyncValue<IpLease?>,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
+
+@ProviderFor(ConfluxProcess)
+const confluxProcessProvider = ConfluxProcessProvider._();
+
+final class ConfluxProcessProvider
+    extends $NotifierProvider<ConfluxProcess, Process?> {
+  const ConfluxProcessProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'confluxProcessProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$confluxProcessHash();
+
+  @$internal
+  @override
+  ConfluxProcess create() => ConfluxProcess();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(Process? value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<Process?>(value),
+    );
+  }
+}
+
+String _$confluxProcessHash() => r'5deda0b23c59bf1924927edcb05bd70e0b299ab2';
+
+abstract class _$ConfluxProcess extends $Notifier<Process?> {
+  Process? build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<Process?, Process?>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<Process?, Process?>,
+              Process?,
               Object?,
               Object?
             >;
@@ -268,7 +321,7 @@ final class VeilnetNotiferProvider
   VeilnetNotifer create() => VeilnetNotifer();
 }
 
-String _$veilnetNotiferHash() => r'fde9b716c52b164c816de2f60bd82355551e689b';
+String _$veilnetNotiferHash() => r'd34a632f58efa01d7928177fb1450d93976b5413';
 
 abstract class _$VeilnetNotifer extends $AsyncNotifier<Veilnet> {
   FutureOr<Veilnet> build();

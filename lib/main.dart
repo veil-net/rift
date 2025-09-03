@@ -3,19 +3,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:rift/components/plane/plane_detail.dart';
+import 'package:rift/models/plane.dart';
+import 'package:rift/pages/auth_page.dart';
 import 'package:rift/pages/home_page.dart';
-import 'package:rift/pages/landing_page.dart';
-import 'package:rift/pages/login_page.dart';
-import 'package:rift/pages/notification_page.dart';
-import 'package:rift/pages/password_reset_page.dart';
-import 'package:rift/pages/portal_page.dart';
-import 'package:rift/pages/register_page.dart';
-import 'package:rift/pages/rift_page.dart';
-import 'package:rift/pages/verify_email_page.dart';
+import 'package:rift/providers/session_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
-import 'providers/user_provider.dart';
 import 'tray_warpper.dart';
 
 Future<void> main() async {
@@ -31,8 +26,7 @@ Future<void> main() async {
 
   await Supabase.initialize(
     url: 'https://supabase.veilnet.org',
-    anonKey:
-        'sb_publishable_eNJQSWUp-w9RTIs2V4UDHw_ILjAP_xr',
+    anonKey: 'sb_publishable_eNJQSWUp-w9RTIs2V4UDHw_ILjAP_xr',
   );
 
   runApp(const ProviderScope(child: MyApp()));
@@ -45,68 +39,32 @@ class MyApp extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final session = ref.watch(sessionProvider);
     final router = GoRouter(
       routes: [
         GoRoute(
           path: '/',
-          builder: (context, state) => const LandingPage(),
-          redirect: (context, state) async {
-            // Handle refresh token
-            final refreshToken = state.uri.queryParameters['refreshToken'];
-            if (refreshToken != null) {
-              await supabase.auth.setSession(refreshToken);
-            }
-            // Check if user is logged in
-            await Future.delayed(const Duration(seconds: 1));
-            final userState = ref.read(userProvider);
-            if (userState.value != null) {
+          builder: (context, state) => const AuthPage(),
+          redirect: (context, state) {
+            if (session.value != null) {
               return '/home';
             }
-            return '/login';
+            return null;
           },
-        ),
-        GoRoute(path: '/login', builder: (context, state) => const LoginPage()),
-        GoRoute(
-          path: '/register',
-          builder: (context, state) => const RegisterPage(),
-        ),
-        GoRoute(
-          path: '/verify-email',
-          builder: (context, state) => const VerifyEmailPage(),
-        ),
-        GoRoute(
-          path: '/password-reset',
-          builder: (context, state) => const PasswordResetPage(),
         ),
         GoRoute(
           path: '/home',
           builder: (context, state) => const HomePage(),
           redirect: (context, state) {
-            final userState = ref.read(userProvider);
-            return userState.value == null ? '/login' : null;
-          },
-        ),
-        GoRoute(
-          path: '/portal',
-          builder: (context, state) => const PortalPage(),
-        ),
-        GoRoute(path: '/rift', builder: (context, state) => const RiftPage()),
-        GoRoute(
-          path: '/notifications',
-          builder: (context, state) => const NotificationPage(),
-        ),
-        GoRoute(
-          path: '/callback',
-          builder: (context, state) => const LandingPage(),
-          redirect: (context, state) async {
-            // Check if user is logged in
-            await Future.delayed(const Duration(seconds: 1));
-            final userState = ref.read(userProvider);
-            if (userState.value != null) {
-              return '/home';
+            if (session.value == null) {
+              return '/';
             }
-            return '/login';
+            return null;
           },
+        ),
+        GoRoute(
+          path: '/plane/:id',
+          builder: (context, state) => PlaneDetail(plane: state.extra as Plane),
         ),
       ],
     );

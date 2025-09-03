@@ -1,8 +1,7 @@
+import 'package:rift/models/plane.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:rift/components/dialog_manager.dart';
-import 'package:rift/providers/plane_provider.dart';
-import 'package:rift/providers/user_provider.dart';
 import 'package:rift/providers/veilnet_provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -12,76 +11,132 @@ class PlaneListTile extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final veilNet = ref.watch(veilnetProvider);
-    final veilNetNotifier = ref.watch(veilnetProvider.notifier);
-
-    String getFlagEmoji(String region) {
-      if (region.length != 2) return '';
-      final base = 0x1F1E6;
-      final chars = region.toUpperCase().codeUnits;
-      return String.fromCharCodes([
-        base + (chars[0] - 0x41),
-        base + (chars[1] - 0x41),
-      ]);
-    }
-
-    Future<void> connectToPlane(Plane plane) async {
-      final userProfile = await ref.read(userProfileProvider.future);
-      if (userProfile.mp <= 0) {
-        if (context.mounted) {
-          DialogManager.showDialog(
-            context,
-            'You do not have enough MP, please visit the Console to start self-hosting a portal or upgrade your service tier',
-            DialogType.error,
-          );
-        }
-        return;
-      }
-      try {
-        await veilNetNotifier.connect(Uuid().v4(), plane.name, plane.public);
-      } catch (e) {
-        if (context.mounted) {
-          DialogManager.showDialog(context, e.toString(), DialogType.error);
-        }
-      }
-    }
-
-    return TweenAnimationBuilder(
-      tween: Tween<double>(begin: 1, end: 0),
-      duration: const Duration(milliseconds: 250),
-      builder: (context, value, child) {
-        return Transform.translate(
-          offset: Offset(value * 100, 0),
-          child: Card(
-            elevation: 5,
-            child: ListTile(
-              leading: Text(
-                getFlagEmoji(plane.region),
-                style: TextStyle(fontSize: 24),
-              ),
-              title: Text(
-                plane.name,
-                style: TextStyle(color: Theme.of(context).colorScheme.primary),
-              ),
-              subtitle: Text(
-                plane.subnet,
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-              ),
-              trailing: FilledButton(
-                onPressed:
-                    veilNet.isBusy || veilNet.isConnected || plane.portals == 0
-                        ? null
-                        : () {
-                          connectToPlane(plane);
-                        },
-                child: Text('Connect'),
+    final isExpanded = useState(false);
+    final veilnetNotifer = ref.watch(veilnetNotiferProvider.notifier);
+    return Card(
+      color: Theme.of(context).colorScheme.surface,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [CircleAvatar(child: Text(plane.region.toUpperCase()))],
+            ),
+            title: Text(
+              plane.name,
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
               ),
             ),
+            subtitle: Text(
+              plane.subnet,
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Theme.of(context).colorScheme.secondary,
+              ),
+            ),
+            trailing: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text('${plane.portals} portals'),
+                const SizedBox(width: 8),
+                FilledButton(
+                  onPressed:
+                      plane.portals <= 0 ||
+                              veilnetNotifer.isBusy() ||
+                              veilnetNotifer.isConnected()
+                          ? null
+                          : () async {
+                            await veilnetNotifer.connect(
+                              Uuid().v4(),
+                              plane.name,
+                              plane.public,
+                            );
+                          },
+                  child: const Text('Connect'),
+                ),
+              ],
+            ),
           ),
-        );
-      },
+          GestureDetector(
+            onTap: () => isExpanded.value = !isExpanded.value,
+            child: Icon(
+              isExpanded.value ? Icons.arrow_drop_up : Icons.arrow_drop_down,
+            ),
+          ),
+          AnimatedSize(
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeInOut,
+            child:
+                isExpanded.value
+                    ? Column(
+                      children: [
+                        ListTile(
+                          title: Text(
+                            'Subnet',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          trailing: Text(plane.subnet),
+                          dense: true,
+                        ),
+                        ListTile(
+                          title: Text(
+                            'Veil ID',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          trailing: Text(plane.veil_id),
+                          dense: true,
+                        ),
+                        ListTile(
+                          title: Text(
+                            'Veil Host',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          trailing: Text(plane.veil_host),
+                          dense: true,
+                        ),
+                        ListTile(
+                          title: Text(
+                            'Veil Port',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          trailing: Text(plane.veil_port.toString()),
+                          dense: true,
+                        ),
+                        ListTile(
+                          title: Text(
+                            'Created At',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          trailing: Text(plane.created_at.toLocal().toString()),
+                          dense: true,
+                        ),
+                      ],
+                    )
+                    : const SizedBox.shrink(),
+          ),
+        ],
+      ),
     );
   }
 }
