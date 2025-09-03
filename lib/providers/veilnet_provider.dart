@@ -216,10 +216,10 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
       switch (Platform.operatingSystem) {
         case "windows":
           final byteData = await rootBundle.load(
-            'assets/bin/windows/veilnet-conflux.exe',
+            'assets/bin/windows/conflux.exe',
           );
           final tempDir = await getTemporaryDirectory();
-          final file = File('${tempDir.path}/veilnet-conflux.exe');
+          final file = File('${tempDir.path}/conflux.exe');
           await file.writeAsBytes(byteData.buffer.asUint8List());
           final arguments = ['up', '-t', anchorToken.toString()];
 
@@ -236,15 +236,6 @@ class VeilNetNotifier extends StateNotifier<VeilNet> {
           break;
 
         case "android":
-          // Request VPN permission first
-          final granted = await _vpnChannel.invokeMethod<bool>(
-            'requestPermission',
-          );
-          if (granted != true) {
-            throw Exception('VPN permission was not granted by the user');
-          }
-
-          // Then start the VPN service
           final success = await _vpnChannel.invokeMethod<bool>(
             'start',
             {"guardian": api.options.baseUrl, "token": anchorToken},

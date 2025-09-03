@@ -3,34 +3,30 @@ package com.veilnet.rift
 import android.app.Activity
 import android.content.Intent
 import android.net.VpnService
+import androidx.core.content.ContextCompat
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
     private val channel = "veilnet/service"
-    private var currentResult: MethodChannel.Result? = null
+
+    companion object{
+        private var guardian: String? = null
+        private var token: String? = null
+    }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
 
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, channel)
             .setMethodCallHandler { call, result ->
-                currentResult = result
                 when (call.method) {
-                    "requestPermission" -> {
-                        val intent = VpnService.prepare(this)
-                        if (intent != null) {
-                            startActivityForResult(intent, 1001)
-                        } else {
-                            result.success(true)
-                        }
-                    }
 
                     "start" -> {
                         try {
-                            val guardian = call.argument<String>("guardian")
-                            val token = call.argument<String>("token")
+                            guardian = call.argument<String>("guardian")
+                            token = call.argument<String>("token")
                             if (guardian == null || token == null) {
                                 result.error(
                                     "Missing argument",
@@ -38,11 +34,17 @@ class MainActivity : FlutterActivity() {
                                     null
                                 )
                             }
-                            val intent = Intent(this, VeilNet::class.java)
-                            intent.putExtra("guardian", guardian)
-                            intent.putExtra("token", token)
-                            startService(intent)
-                            result.success(true)
+                            val vpnIntent = VpnService.prepare(context)
+                            if (vpnIntent != null) {
+                                startActivityForResult(vpnIntent, 1001)
+                                result.success(true)
+                            } else {
+                                val veilnetIntent = Intent(context, VeilNet::class.java)
+                                veilnetIntent.putExtra("guardian", guardian)
+                                veilnetIntent.putExtra("token", token)
+                                ContextCompat.startForegroundService(this, veilnetIntent)
+                                result.success(true)
+                            }
                         } catch (e: Exception) {
                             result.error("Fail to start", e.message, null)
                         }
@@ -50,8 +52,8 @@ class MainActivity : FlutterActivity() {
 
                     "stop" -> {
                         try {
-                            val ok = VeilNet.stop()
-                            result.success(ok)
+                            VeilNet.stop()
+                            result.success(true)
                         } catch (e: Exception) {
                             result.error("Fail to stop", e.message, null)
                         }
@@ -65,10 +67,11 @@ class MainActivity : FlutterActivity() {
 override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
     when (requestCode) {
         1001 -> {
-            if (resultCode == Activity.RESULT_OK) {
-                currentResult?.success(true)
-            } else {
-                currentResult?.success(false)
+            if (resultCode == RESULT_OK) {
+                val veilnetIntent = Intent(context, VeilNet::class.java)
+                veilnetIntent.putExtra("guardian", guardian)
+                veilnetIntent.putExtra("token", token)
+                ContextCompat.startForegroundService(this, veilnetIntent)
             }
         }
 
