@@ -9,23 +9,36 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import veilnet.Anchor
 import veilnet.Veilnet.newAnchor
+import android.app.Notification
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.app.PendingIntent
+import android.content.Context
+import android.os.Build
+import androidx.core.app.NotificationCompat
 
 class VeilNet : VpnService() {
 
     companion object {
         @Volatile
         private var instance: VeilNet? = null
+        private const val NOTIFICATION_CHANNEL_ID = "VeilNet"
+        private const val NOTIFICATION_ID = 1
 
-        fun stop(): Boolean {
-            val service = instance ?: return false
-            service.anchorScope.launch {
-                service.egress.cancel()
-                service.ingress.cancel()
-                service.anchor?.stop()
-                service.tunInterface?.close()
-                service.stopSelf()
+        fun stop(){
+            instance?.anchorScope?.launch {
+                // Stop the tunnel interface
+                instance?.egress?.cancel()
+                instance?.ingress?.cancel()
+                instance?.tunInterface?.close()
+                instance?.tunInterface = null
+                // Stop the anchor
+                instance?.anchor?.stop()
+                instance?.anchorScope?.cancel()
+                instance?.anchor = null
+                // Call stopSelf to stop the service
+                instance?.stopSelf()
             }
-            return true
         }
     }
 
@@ -38,12 +51,37 @@ class VeilNet : VpnService() {
     override fun onCreate() {
         super.onCreate()
         instance = this
+        createNotificationChannel()
     }
 
     override fun onDestroy() {
+        // Stop the tunnel interface when the service is destroyed
+        egress.cancel()
+        ingress.cancel()
+        tunInterface?.close()
+        tunInterface = null
+        // Stop the anchor when the service is destroyed
+        anchor?.stop()
         anchorScope.cancel()
+        anchor = null
+        // Release the instance reference
         instance = null
         super.onDestroy()
+    }
+
+    override fun onRevoke() {
+        // Stop the tunnel interface when the service is destroyed
+        egress.cancel()
+        ingress.cancel()
+        tunInterface?.close()
+        tunInterface = null
+        // Stop the anchor when the service is destroyed
+        anchor?.stop()
+        anchorScope.cancel()
+        anchor = null
+        // Release the instance reference
+        instance = null
+        super.onRevoke()
     }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
@@ -55,6 +93,9 @@ class VeilNet : VpnService() {
             stopSelf()
             return START_NOT_STICKY
         }
+
+        val notification = buildNotification()
+        startForeground(NOTIFICATION_ID, notification)
 
         anchorScope.launch {
             try {
@@ -73,6 +114,8 @@ class VeilNet : VpnService() {
                 return@launch
             }
 
+            updateNotification("VeilNet anchor is active, creating tunnel interface...")
+
             try {
                 val cidr = anchor!!.cidr
                 val (ip, mask) = cidr!!.split("/")
@@ -89,8 +132,14 @@ class VeilNet : VpnService() {
                 stopSelf()
                 return@launch
             }
+
+            updateNotification("VeilNet tunnel interface is active, starting egress and ingress...")
+
             startEgress()
             startIngress()
+
+            updateNotification("VeilNet is active")
+
             if (anchor?.isAlive == false) {
                 stop()
                 return@launch
@@ -143,5 +192,46 @@ class VeilNet : VpnService() {
                 stopSelf()
             }
         }
+    }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val serviceChannel = NotificationChannel(
+                NOTIFICATION_CHANNEL_ID,
+                "VeilNet", // User-visible name
+                NotificationManager.IMPORTANCE_DEFAULT // Or IMPORTANCE_LOW if less intrusive
+            )
+            val manager = getSystemService(NotificationManager::class.java)
+            manager?.createNotificationChannel(serviceChannel)
+        }
+    }
+
+
+    private fun buildNotification(message: String = "VeilNet VPN is active"): Notification {
+        // Intent to open your app's main activity when the notification is tapped
+        val notificationIntent = Intent(this, MainActivity::class.java) // Assuming MainActivity is your entry point
+        val pendingIntentFlags =
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        val pendingIntent = PendingIntent.getActivity(
+            this,
+            0,
+            notificationIntent,
+            pendingIntentFlags
+        )
+
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setContentTitle("VeilNet VPN")
+            .setContentText(message)
+            .setSmallIcon(R.drawable.ic_launcher_foreground) // Replace with your notification icon
+            .setContentIntent(pendingIntent)
+            .setOngoing(true) // Makes the notification non-dismissable by swiping
+            .setPriority(NotificationCompat.PRIORITY_DEFAULT) // Or PRIORITY_LOW
+            .build()
+    }
+
+    private fun updateNotification(message: String) {
+        val notification = buildNotification(message)
+        val notificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        notificationManager.notify(NOTIFICATION_ID, notification)
     }
 }
