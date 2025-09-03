@@ -45,5 +45,74 @@ final class PlanesProvider
 
 String _$planesHash() => r'cbd7c7392c3a2c7485244fef6009b276c5e13d8f';
 
+@ProviderFor(planeByName)
+const planeByNameProvider = PlaneByNameFamily._();
+
+final class PlaneByNameProvider
+    extends $FunctionalProvider<AsyncValue<Plane?>, Plane?, Stream<Plane?>>
+    with $FutureModifier<Plane?>, $StreamProvider<Plane?> {
+  const PlaneByNameProvider._({
+    required PlaneByNameFamily super.from,
+    required String super.argument,
+  }) : super(
+         retry: null,
+         name: r'planeByNameProvider',
+         isAutoDispose: true,
+         dependencies: null,
+         $allTransitiveDependencies: null,
+       );
+
+  @override
+  String debugGetCreateSourceHash() => _$planeByNameHash();
+
+  @override
+  String toString() {
+    return r'planeByNameProvider'
+        ''
+        '($argument)';
+  }
+
+  @$internal
+  @override
+  $StreamProviderElement<Plane?> $createElement($ProviderPointer pointer) =>
+      $StreamProviderElement(pointer);
+
+  @override
+  Stream<Plane?> create(Ref ref) {
+    final argument = this.argument as String;
+    return planeByName(ref, argument);
+  }
+
+  @override
+  bool operator ==(Object other) {
+    return other is PlaneByNameProvider && other.argument == argument;
+  }
+
+  @override
+  int get hashCode {
+    return argument.hashCode;
+  }
+}
+
+String _$planeByNameHash() => r'415e25b7935705278bf925e0bb0f7f2f08b3a5b2';
+
+final class PlaneByNameFamily extends $Family
+    with $FunctionalFamilyOverride<Stream<Plane?>, String> {
+  const PlaneByNameFamily._()
+    : super(
+        retry: null,
+        name: r'planeByNameProvider',
+        dependencies: null,
+        $allTransitiveDependencies: null,
+        isAutoDispose: true,
+      );
+
+  PlaneByNameProvider call(String id) =>
+      PlaneByNameProvider._(argument: id, from: this);
+
+  @override
+  String toString() => r'planeByNameProvider';
+}
+
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

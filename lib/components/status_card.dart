@@ -37,7 +37,7 @@ class StatusCard extends HookConsumerWidget {
                   : const Text('Diconnecting...')
               : veilnetNotifer.isConnected()
               ? Text(
-                  'Connected to ${data.conflux?.name}',
+                  'Connected to ${data?.region}',
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.primary,
                   ),
@@ -65,9 +65,9 @@ class StatusCard extends HookConsumerWidget {
           data: (data) => veilnetNotifer.isBusy()
               ? const LinearProgressIndicator()
               : veilnetNotifer.isConnected()
-              ? data.ipLease?.cidr != null
+              ? data?.cidr != null
                     ? Text(
-                        '${data.ipLease?.cidr}',
+                        '${data?.cidr}',
                         style: TextStyle(
                           color: Theme.of(context).colorScheme.secondary,
                         ),

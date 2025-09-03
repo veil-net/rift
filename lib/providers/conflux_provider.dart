@@ -13,3 +13,14 @@ Stream<List<Conflux>> conflux(Ref ref) {
       .map((event) => event.map((r) => Conflux.fromJson(r)).toList());
   return stream;
 }
+
+@riverpod
+Stream<Conflux?> confluxByName(Ref ref, String name) {
+  final supabase = ref.watch(supabaseProvider);
+  final stream = supabase
+      .from('confluxes')
+      .stream(primaryKey: ['id'])
+      .eq('name', name)
+      .map((event) => event.map((r) => Conflux.fromJson(r)).firstOrNull);
+  return stream;
+}

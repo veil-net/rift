@@ -49,8 +49,7 @@ class PlaneListTile extends HookConsumerWidget {
                           : () async {
                             await veilnetNotifer.connect(
                               Uuid().v4(),
-                              plane.name,
-                              plane.public,
+                              plane,
                             );
                           },
                   child: const Text('Connect'),

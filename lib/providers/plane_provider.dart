@@ -13,3 +13,14 @@ Stream<List<Plane>> planes(Ref ref) {
       .map((event) => event.map((r) => Plane.fromJson(r)).toList());
   return stream;
 }
+
+@riverpod
+Stream<Plane?> planeByName(Ref ref, String id) {
+  final supabase = ref.watch(supabaseProvider);
+  final stream = supabase
+      .from('planes')
+      .stream(primaryKey: ['id'])
+      .eq('id', id)
+      .map((event) => event.map((r) => Plane.fromJson(r)).firstOrNull);
+  return stream;
+}

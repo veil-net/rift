@@ -1,14 +1,15 @@
+import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:rift/models/conflux.dart';
-import 'package:rift/models/conflux_session.dart';
-import 'package:rift/models/ip_lease.dart';
-import 'package:rift/models/veilnet.dart';
+import 'package:rift/models/conflux_details.dart';
+import 'package:rift/models/plane.dart';
+import 'package:rift/models/veilnet_pref.dart';
 import 'package:rift/providers/api_provider.dart';
-import 'package:rift/providers/conflux_provider.dart';
+import 'package:rift/providers/conflux_session_provider.dart';
+import 'package:rift/providers/ip_lease_provider.dart';
 import 'package:rift/providers/pref_provider.dart';
 import 'package:rift/providers/supabase_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -30,90 +31,27 @@ class ShouldVeilNetConnect extends _$ShouldVeilNetConnect {
 }
 
 @riverpod
-class ConfluxInstanceName extends _$ConfluxInstanceName {
+class SavedVeilnetPref extends _$SavedVeilnetPref {
   @override
-  Future<String?> build() async {
+  Future<VeilnetPref> build() async {
     final pref = await ref.watch(prefProvider.future);
     final name = pref.getString('name');
-    log('triggered name build');
-    return name;
+    final planeID = pref.getString('plane_id');
+    return VeilnetPref(name: name, planeID: planeID);
   }
 
-  Future<void> setName(String name) async {
+  Future<void> setVeilnetPref(String name, String planeID) async {
     final pref = await ref.watch(prefProvider.future);
     await pref.setString('name', name);
+    await pref.setString('plane_id', planeID);
     ref.invalidateSelf();
   }
 
-  Future<void> clearName() async {
+  Future<void> clearVeilnetPref() async {
     final pref = await ref.watch(prefProvider.future);
     await pref.remove('name');
+    await pref.remove('plane_id');
     ref.invalidateSelf();
-  }
-}
-
-@riverpod
-class ConfluxInstance extends _$ConfluxInstance {
-  @override
-  Future<Conflux?> build() async {
-    final name = await ref.watch(confluxInstanceNameProvider.future);
-    final confluxes = ref.watch(confluxProvider);
-
-    return confluxes.when(
-      data: (data) {
-        try {
-          return data.firstWhere((element) => element.name == name);
-        } catch (e) {
-          return null;
-        }
-      },
-      loading: () => null,
-      error: (_, __) => null,
-    );
-  }
-}
-
-@riverpod
-class ConfluxInstanceSession extends _$ConfluxInstanceSession {
-  @override
-  Future<ConfluxSession?> build() async {
-    final supabase = ref.watch(supabaseProvider);
-    final confluxInstance = await ref.watch(confluxInstanceProvider.future);
-
-    if (confluxInstance == null) {
-      return null;
-    }
-
-    return supabase
-        .from('conflux_sessions')
-        .select()
-        .eq('conflux_id', confluxInstance.id)
-        .then(
-          (data) =>
-              data.map((r) => ConfluxSession.fromJson(r)).toList().firstOrNull,
-        );
-  }
-}
-
-@riverpod
-class ConfluxInstanceIpLease extends _$ConfluxInstanceIpLease {
-  @override
-  Future<IpLease?> build() async {
-    final supabase = ref.watch(supabaseProvider);
-    final confluxInstance = await ref.watch(confluxInstanceProvider.future);
-
-    if (confluxInstance == null) {
-      return null;
-    }
-
-    return supabase
-        .from('ip_leases')
-        .select()
-        .eq('conflux_id', confluxInstance.id)
-        .then(
-          (data) =>
-              data.map((r) => IpLease.fromJson(r)).toList().firstOrNull,
-        );
   }
 }
 
@@ -144,29 +82,30 @@ class ConfluxProcess extends _$ConfluxProcess {
 @riverpod
 class VeilnetNotifer extends _$VeilnetNotifer {
   @override
-  Future<Veilnet> build() async {
-    ref.watch(shouldVeilNetConnectProvider);
-    final confluxInstance = await ref.watch(confluxInstanceProvider.future);
-    final confluxInstanceSession = await ref.watch(
-      confluxInstanceSessionProvider.future,
-    );
-    final confluxInstanceIpLease = await ref.watch(
-      confluxInstanceIpLeaseProvider.future,
-    );
-    log('veilnet build');
-    log('confluxInstance: $confluxInstance');
-    log('confluxInstanceSession: $confluxInstanceSession');
-    log('confluxInstanceIpLease: $confluxInstanceIpLease');
-    return Veilnet(
-      conflux: confluxInstance,
-      session: confluxInstanceSession,
-      ipLease: confluxInstanceIpLease,
-    );
+  Future<ConfluxDetails?> build() async {
+    ref.watch(confluxSessionProvider);
+    ref.watch(ipLeaseProvider);
+    final supabase = ref.watch(supabaseProvider);
+    final savedPref = await ref.watch(savedVeilnetPrefProvider.future);
+
+    if (savedPref.name == null || savedPref.planeID == null) {
+      return null;
+    }
+
+    final details =
+        await supabase
+            .from('conflux_details')
+            .select('*')
+            .eq('name', savedPref.name!)
+            .eq('plane_id', savedPref.planeID!)
+            .single();
+
+    return ConfluxDetails.fromJson(details);
   }
 
   bool isConnected() {
     return state.when(
-      data: (veilnet) => veilnet.session != null,
+      data: (veilnet) => veilnet?.signature != null,
       loading: () => false,
       error: (_, __) => false,
     );
@@ -180,7 +119,7 @@ class VeilnetNotifer extends _$VeilnetNotifer {
     return true;
   }
 
-  Future<void> connect(String name, String plane, bool public) async {
+  Future<void> connect(String name, Plane plane) async {
     if (isBusy()) {
       throw Exception('Veilnet is busy');
     }
@@ -193,7 +132,7 @@ class VeilnetNotifer extends _$VeilnetNotifer {
     try {
       final api = await ref.watch(apiProvider.future);
       final response = await api.post(
-        '/conflux?conflux_name=$name&plane_name=$plane&public=$public',
+        '/conflux?conflux_name=$name&plane_name=${plane.name}&public=${plane.public}',
       );
       final anchorToken = response.data;
       switch (Platform.operatingSystem) {
@@ -213,7 +152,7 @@ class VeilnetNotifer extends _$VeilnetNotifer {
           }
           break;
       }
-      await ref.read(confluxInstanceNameProvider.notifier).setName(name);
+      await ref.read(savedVeilnetPrefProvider.notifier).setVeilnetPref(name, plane.id);
     } on Exception catch (e) {
       log('Exception: $e');
       ref.read(shouldVeilNetConnectProvider.notifier).setShouldConnect(false);
@@ -231,6 +170,7 @@ class VeilnetNotifer extends _$VeilnetNotifer {
 
   Future<void> disconnect() async {
     try {
+      ref.read(shouldVeilNetConnectProvider.notifier).setShouldConnect(false);
       switch (Platform.operatingSystem) {
         case "windows":
           ref.read(confluxProcessProvider.notifier).stopConfluxProcess();
@@ -238,10 +178,10 @@ class VeilnetNotifer extends _$VeilnetNotifer {
         case "android":
           await _vpnChannel.invokeMethod<bool>('stop');
       }
-      await ref.read(confluxInstanceNameProvider.notifier).clearName();
+      // await ref.read(savedVeilnetPrefProvider.notifier).clearVeilnetPref();
     } on Exception catch (e) {
       log('Exception: $e');
-      ref.read(shouldVeilNetConnectProvider.notifier).setShouldConnect(false);
+      ref.read(shouldVeilNetConnectProvider.notifier).setShouldConnect(true);
       rethrow;
     } finally {
       Future.delayed(const Duration(seconds: 30), () {
