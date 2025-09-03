@@ -1,25 +1,25 @@
+import 'package:rift/providers/session_provider.dart';
 import 'package:dio/dio.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'user_provider.dart';
+import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-final apiProvider = Provider<Dio>((ref) {
-  final userState = ref.watch(userProvider);
-  final dio = Dio(
-    BaseOptions(baseUrl: 'https://guardian.veilnet.org'),
-  );
-  dio.interceptors.add(
-    InterceptorsWrapper(
-      onRequest: (options, handler) {
-        if (userState.session == null) {
-          return handler.reject(
-            DioException(requestOptions: options, error: 'Session not found'),
-          );
-        }
-        options.headers['Authorization'] =
-            'Bearer ${userState.session!.accessToken}';
-        return handler.next(options);
+part 'api_provider.g.dart';
+
+@riverpod
+Future<Dio> api(Ref ref) async {
+  final session = await ref.watch(sessionProvider.future);
+  final accessToken = session?.accessToken;
+
+  if (accessToken == null) {
+    throw Exception('No access token found');
+  }
+
+  return Dio(
+    BaseOptions(
+      baseUrl: 'https://guardian.veilnet.org',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
       },
     ),
   );
-  return dio;
-});
+}

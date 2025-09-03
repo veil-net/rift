@@ -1,15 +1,15 @@
-import 'package:rift/models/conflux.dart';
+import 'package:rift/models/conflux_session.dart';
 import 'package:rift/providers/supabase_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'conflux_provider.g.dart';
+part 'conflux_session_provider.g.dart';
 
 @riverpod
-Stream<List<Conflux>> conflux(Ref ref) {
+Stream<List<ConfluxSession>> confluxSession(Ref ref) {
   final supabase = ref.watch(supabaseProvider);
   final stream = supabase
-      .from('confluxes')
+      .from('conflux_sessions')
       .stream(primaryKey: ['id'])
-      .map((event) => event.map((r) => Conflux.fromJson(r)).toList());
+      .map((event) => event.map((r) => ConfluxSession.fromJson(r)).toList());
   return stream;
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
-import 'package:rift/providers/conflux_provider.dart';
+import 'package:rift/models/conflux.dart';
 
 class ConfluxCard extends HookConsumerWidget {
   final Conflux conflux;

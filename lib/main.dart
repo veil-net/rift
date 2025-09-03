@@ -59,7 +59,7 @@ class MyApp extends HookConsumerWidget {
             // Check if user is logged in
             await Future.delayed(const Duration(seconds: 1));
             final userState = ref.read(userProvider);
-            if (userState.session != null) {
+            if (userState.value != null) {
               return '/home';
             }
             return '/login';
@@ -83,7 +83,7 @@ class MyApp extends HookConsumerWidget {
           builder: (context, state) => const HomePage(),
           redirect: (context, state) {
             final userState = ref.read(userProvider);
-            return userState.session == null ? '/login' : null;
+            return userState.value == null ? '/login' : null;
           },
         ),
         GoRoute(
@@ -102,7 +102,7 @@ class MyApp extends HookConsumerWidget {
             // Check if user is logged in
             await Future.delayed(const Duration(seconds: 1));
             final userState = ref.read(userProvider);
-            if (userState.session != null) {
+            if (userState.value != null) {
               return '/home';
             }
             return '/login';
@@ -118,13 +118,14 @@ class MyApp extends HookConsumerWidget {
           seedColor: const Color.fromARGB(255, 14, 165, 233),
           primary: const Color.fromARGB(255, 14, 165, 233),
           secondary: const Color.fromARGB(255, 139, 92, 246),
-          surface: const Color.fromARGB(255, 12, 10, 9),
-          surfaceContainer: const Color.fromARGB(255, 41, 37, 36),
-          surfaceContainerHigh: const Color.fromARGB(255, 68, 64, 60),
-          surfaceContainerHighest: const Color.fromARGB(255, 87, 83, 78),
-          surfaceContainerLow: const Color.fromARGB(255, 28, 25, 23),
-          surfaceContainerLowest: const Color.fromARGB(255, 12, 10, 9),
-          outline: const Color.fromARGB(255, 120, 113, 108),
+          surface: const Color.fromARGB(255, 250, 250, 249),
+          surfaceContainer: const Color.fromARGB(255, 214, 211, 209),
+          surfaceContainerHigh: const Color.fromARGB(255, 231, 229, 228),
+          surfaceContainerHighest: const Color.fromARGB(255, 245, 245, 244),
+          surfaceContainerLow: const Color.fromARGB(255, 168, 162, 158),
+          surfaceContainerLowest: const Color.fromARGB(255, 120, 113, 108),
+          outline: const Color.fromARGB(255, 12, 10, 9),
+          error: Colors.red,
           brightness: Brightness.light,
         ),
       ),
@@ -134,16 +135,17 @@ class MyApp extends HookConsumerWidget {
           primary: const Color.fromARGB(255, 14, 165, 233),
           secondary: const Color.fromARGB(255, 139, 92, 246),
           surface: const Color.fromARGB(255, 12, 10, 9),
-          surfaceContainer: const Color.fromARGB(255, 41, 37, 36),
-          surfaceContainerHigh: const Color.fromARGB(255, 68, 64, 60),
-          surfaceContainerHighest: const Color.fromARGB(255, 87, 83, 78),
-          surfaceContainerLow: const Color.fromARGB(255, 28, 25, 23),
-          surfaceContainerLowest: const Color.fromARGB(255, 12, 10, 9),
-          outline: const Color.fromARGB(255, 120, 113, 108),
+          surfaceContainer: const Color.fromARGB(255, 68, 64, 60),
+          surfaceContainerHigh: const Color.fromARGB(255, 87, 83, 78),
+          surfaceContainerHighest: const Color.fromARGB(255, 120, 113, 108),
+          surfaceContainerLow: const Color.fromARGB(255, 41, 37, 36),
+          surfaceContainerLowest: const Color.fromARGB(255, 28, 25, 23),
+          outline: const Color.fromARGB(255, 250, 250, 249),
+          error: Colors.red,
           brightness: Brightness.dark,
         ),
       ),
-      themeMode: ThemeMode.dark,
+      themeMode: ThemeMode.system,
       routerConfig: router,
     );
 

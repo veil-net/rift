@@ -1,15 +1,15 @@
-import 'package:rift/models/plane.dart';
+import 'package:rift/models/ip_lease.dart';
 import 'package:rift/providers/supabase_provider.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
-part 'plane_provider.g.dart';
+part 'ip_lease_provider.g.dart';
 
 @riverpod
-Stream<List<Plane>> planes(Ref ref) {
+Stream<List<IpLease>> ipLease(Ref ref) {
   final supabase = ref.watch(supabaseProvider);
   final stream = supabase
-      .from('planes')
+      .from('ip_leases')
       .stream(primaryKey: ['id'])
-      .map((event) => event.map((r) => Plane.fromJson(r)).toList());
+      .map((event) => event.map((r) => IpLease.fromJson(r)).toList());
   return stream;
 }
