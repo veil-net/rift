@@ -1,10 +1,12 @@
+import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
+import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:rift/components/plane/plane_filter_card.dart';
 import 'package:rift/components/plane/plane_list_tile.dart';
 import 'package:rift/components/profile_card.dart';
 import 'package:rift/components/status_card.dart';
 import 'package:rift/providers/plane_provider.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:rift/providers/publicity_provider.dart';
 
 class HomePage extends HookConsumerWidget {
   const HomePage({super.key});
@@ -12,7 +14,8 @@ class HomePage extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final planes = ref.watch(planesProvider);
-    final isPublic = useState(true);
+    final isPublic = ref.watch(publicityProvider);
+    final planeQuery = ref.watch(planeQueryProvider);
     return Scaffold(
       body: SafeArea(
         child: CustomScrollView(
@@ -21,17 +24,17 @@ class HomePage extends HookConsumerWidget {
               child: Wrap(
                 alignment: WrapAlignment.center,
                 runAlignment: WrapAlignment.center,
-                crossAxisAlignment: WrapCrossAlignment.center,
-                spacing: 8,
-                runSpacing: 8,
+                crossAxisAlignment: WrapCrossAlignment.start,
+                spacing: 4,
+                runSpacing: 4,
                 children: [
                   ConstrainedBox(
                     constraints: BoxConstraints(
                       maxWidth:
                           MediaQuery.of(context).orientation ==
-                              Orientation.portrait
-                          ? MediaQuery.of(context).size.width
-                          : MediaQuery.of(context).size.width * 0.5 - 16,
+                                  Orientation.portrait
+                              ? MediaQuery.of(context).size.width
+                              : MediaQuery.of(context).size.width * 0.5 - 8,
                     ),
                     child: ProfileCard(),
                   ),
@@ -39,41 +42,17 @@ class HomePage extends HookConsumerWidget {
                     constraints: BoxConstraints(
                       maxWidth:
                           MediaQuery.of(context).orientation ==
-                              Orientation.portrait
-                          ? MediaQuery.of(context).size.width
-                          : MediaQuery.of(context).size.width * 0.5 - 16,
+                                  Orientation.portrait
+                              ? MediaQuery.of(context).size.width
+                              : MediaQuery.of(context).size.width * 0.5 - 8,
                     ),
-                    child: StatusCard(),
-                  ),
-                ],
-              ),
-            ),
-            SliverToBoxAdapter(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  ToggleButtons(
-                    isSelected: [isPublic.value, !isPublic.value],
-                    onPressed: (index) => isPublic.value = index == 0,
-                    borderRadius: BorderRadius.circular(16),
-                    children: const [
-                      Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          spacing: 8,
-                          children: [Icon(Icons.public), Text('Public')],
-                        ),
-                      ),
-                      Padding(
-                        padding: EdgeInsets.all(8.0),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          spacing: 8,
-                          children: [Icon(Icons.lock), Text('Private')],
-                        ),
-                      ),
-                    ],
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        StatusCard(),
+                        PlaneFilterCard(),
+                      ],
+                    ),
                   ),
                 ],
               ),
@@ -81,26 +60,34 @@ class HomePage extends HookConsumerWidget {
             SliverToBoxAdapter(
               child: planes.when(
                 data: (planes) {
-                  final filteredPlanes = isPublic.value
-                      ? planes.where((plane) => plane.public).toList()
-                      : planes.where((plane) => !plane.public).toList();
+                  planes =
+                      isPublic
+                          ? planes.where((plane) => plane.public).toList()
+                          : planes.where((plane) => !plane.public).toList();
+                  planes = planes.where((plane) => plane.name.contains(planeQuery)).toList();
                   return Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: filteredPlanes
-                        .map(
-                          (plane) => ConstrainedBox(
-                            constraints: BoxConstraints(
-                              maxWidth:
-                                  MediaQuery.of(context).orientation ==
-                                      Orientation.portrait
-                                  ? MediaQuery.of(context).size.width
-                                  : MediaQuery.of(context).size.width * 0.5 - 16,
-                            ),
-                            child: PlaneListTile(plane: plane),
-                          ),
-                        )
-                        .toList(),
+                    alignment: WrapAlignment.center,
+                    runAlignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.start,
+                    spacing: 4,
+                    runSpacing: 4,
+                    children:
+                        planes
+                            .map(
+                              (plane) => ConstrainedBox(
+                                constraints: BoxConstraints(
+                                  maxWidth:
+                                      MediaQuery.of(context).orientation ==
+                                              Orientation.portrait
+                                          ? MediaQuery.of(context).size.width
+                                          : MediaQuery.of(context).size.width *
+                                                  0.5 -
+                                              8,
+                                ),
+                                child: PlaneListTile(plane: plane),
+                              ),
+                            )
+                            .toList(),
                   );
                 },
                 error: (error, stackTrace) => Text('Error: $error'),
@@ -109,6 +96,34 @@ class HomePage extends HookConsumerWidget {
             ),
           ],
         ),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          ref.read(publicityProvider.notifier).toggle();
+        },
+        child: isPublic ? Icon(Icons.public) : Icon(Icons.public_off),
+      ),
+      floatingActionButtonLocation:
+          FloatingActionButtonLocation.miniCenterDocked,
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: 0,
+        onTap: (index) {
+          switch (index) {
+            case 0:
+              context.push('/home');
+              break;
+            case 1:
+              context.push('/settings');
+              break;
+          }
+        },
+        items: [
+          BottomNavigationBarItem(icon: Icon(Icons.home), label: 'Home'),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
+            label: 'Settings',
+          ),
+        ],
       ),
     );
   }

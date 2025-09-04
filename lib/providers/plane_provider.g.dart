@@ -114,5 +114,57 @@ final class PlaneByNameFamily extends $Family
   String toString() => r'planeByNameProvider';
 }
 
+@ProviderFor(PlaneQuery)
+const planeQueryProvider = PlaneQueryProvider._();
+
+final class PlaneQueryProvider extends $NotifierProvider<PlaneQuery, String> {
+  const PlaneQueryProvider._()
+    : super(
+        from: null,
+        argument: null,
+        retry: null,
+        name: r'planeQueryProvider',
+        isAutoDispose: true,
+        dependencies: null,
+        $allTransitiveDependencies: null,
+      );
+
+  @override
+  String debugGetCreateSourceHash() => _$planeQueryHash();
+
+  @$internal
+  @override
+  PlaneQuery create() => PlaneQuery();
+
+  /// {@macro riverpod.override_with_value}
+  Override overrideWithValue(String value) {
+    return $ProviderOverride(
+      origin: this,
+      providerOverride: $SyncValueProvider<String>(value),
+    );
+  }
+}
+
+String _$planeQueryHash() => r'f2860a58574d679759ac668d7014e3bff7dcbbdb';
+
+abstract class _$PlaneQuery extends $Notifier<String> {
+  String build();
+  @$mustCallSuper
+  @override
+  void runBuild() {
+    final created = build();
+    final ref = this.ref as $Ref<String, String>;
+    final element =
+        ref.element
+            as $ClassProviderElement<
+              AnyNotifier<String, String>,
+              String,
+              Object?,
+              Object?
+            >;
+    element.handleValue(ref, created);
+  }
+}
+
 // ignore_for_file: type=lint
 // ignore_for_file: subtype_of_sealed_class, invalid_use_of_internal_member, invalid_use_of_visible_for_testing_member, deprecated_member_use_from_same_package

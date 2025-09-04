@@ -7,7 +7,9 @@ import 'package:rift/components/plane/plane_detail.dart';
 import 'package:rift/models/plane.dart';
 import 'package:rift/pages/auth_page.dart';
 import 'package:rift/pages/home_page.dart';
+import 'package:rift/pages/settings_page.dart';
 import 'package:rift/providers/session_provider.dart';
+import 'package:rift/providers/theme_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:window_manager/window_manager.dart';
 
@@ -40,6 +42,7 @@ class MyApp extends HookConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final session = ref.watch(sessionProvider);
+    final theme = ref.watch(themeProviderProvider);
     final router = GoRouter(
       routes: [
         GoRoute(
@@ -61,6 +64,10 @@ class MyApp extends HookConsumerWidget {
             }
             return null;
           },
+        ),
+        GoRoute(
+          path: '/settings',
+          builder: (context, state) => const SettingsPage(),
         ),
         GoRoute(
           path: '/plane/:id',
@@ -103,7 +110,7 @@ class MyApp extends HookConsumerWidget {
           brightness: Brightness.dark,
         ),
       ),
-      themeMode: ThemeMode.system,
+      themeMode: theme.value,
       routerConfig: router,
     );
 

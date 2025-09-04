@@ -182,7 +182,7 @@ final class VeilnetNotiferProvider
   VeilnetNotifer create() => VeilnetNotifer();
 }
 
-String _$veilnetNotiferHash() => r'feb9dfed75aa4efba61812ac3d6007180397d426';
+String _$veilnetNotiferHash() => r'bb8cd8864a5873a53f1d078ae319a61b01cc93c5';
 
 abstract class _$VeilnetNotifer extends $AsyncNotifier<ConfluxDetails?> {
   FutureOr<ConfluxDetails?> build();

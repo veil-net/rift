@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:developer';
 import 'dart:io';
 
@@ -98,9 +97,9 @@ class VeilnetNotifer extends _$VeilnetNotifer {
             .select('*')
             .eq('name', savedPref.name!)
             .eq('plane_id', savedPref.planeID!)
-            .single();
+            .maybeSingle();
 
-    return ConfluxDetails.fromJson(details);
+    return details != null ? ConfluxDetails.fromJson(details) : null;
   }
 
   bool isConnected() {
@@ -152,7 +151,9 @@ class VeilnetNotifer extends _$VeilnetNotifer {
           }
           break;
       }
-      await ref.read(savedVeilnetPrefProvider.notifier).setVeilnetPref(name, plane.id);
+      await ref
+          .read(savedVeilnetPrefProvider.notifier)
+          .setVeilnetPref(name, plane.id);
     } on Exception catch (e) {
       log('Exception: $e');
       ref.read(shouldVeilNetConnectProvider.notifier).setShouldConnect(false);

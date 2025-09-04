@@ -11,165 +11,202 @@ class ProfileCard extends HookConsumerWidget {
     final userProfile = ref.watch(userProfileProvider);
     final conflux = ref.watch(confluxProvider);
 
-    return Card(
-      color: Theme.of(context).colorScheme.surface,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        spacing: 8,
-        children: [
-          ListTile(
-            leading: Icon(
-              Icons.person,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            title: userProfile.when(
-              data: (data) => Text(
-                data.username ?? 'No username',
-                style: TextStyle(color: Theme.of(context).colorScheme.primary),
-                overflow: TextOverflow.ellipsis,
-              ),
-              error: (error, stackTrace) => Row(
+    return TweenAnimationBuilder(
+      tween: Tween<double>(begin: 0, end: 1),
+      curve: Curves.easeInOut,
+      duration: const Duration(milliseconds: 300),
+      builder:
+          (context, value, child) => Opacity(
+            opacity: value,
+            child: Card(
+              color: Theme.of(context).colorScheme.surface,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 8,
                 children: [
-                  Icon(Icons.error, color: Theme.of(context).colorScheme.error),
-                  Expanded(
-                    child: Text(
-                      error.toString(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                ],
-              ),
-              loading: () => const LinearProgressIndicator(),
-            ),
-            subtitle: userProfile.when(
-              data: (data) => Text(data.email),
-              error: (error, stackTrace) => Row(
-                children: [
-                  Icon(Icons.error, color: Theme.of(context).colorScheme.error),
-                  Expanded(
-                    child: Text(
-                      error.toString(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              loading: () => const LinearProgressIndicator(),
-            ),
-            trailing: userProfile.when(
-              data: (data) => Text(
-                data.mp.toString(),
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-              error: (error, stackTrace) => Row(
-                children: [
-                  Icon(Icons.error, color: Theme.of(context).colorScheme.error),
-                  Expanded(
-                    child: Text(
-                      error.toString(),
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.error,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              loading: () => const CircularProgressIndicator(),
-            ),
-          ),
-          Row(
-            spacing: 8,
-            children: [
-              Expanded(
-                child: Card(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: ListTile(
+                  ListTile(
                     leading: Icon(
-                      Icons.cyclone,
+                      Icons.person,
                       color: Theme.of(context).colorScheme.primary,
                     ),
-                    title: conflux.when(
-                      data: (data) => Text(
-                        '${data.where((conflux) => conflux.portal).length}',
-                      ),
-                      error: (error, stackTrace) => Row(
-                        children: [
-                          Icon(
-                            Icons.error,
-                            color: Theme.of(context).colorScheme.error,
+                    title: userProfile.when(
+                      data:
+                          (data) => Text(
+                            data.username ?? 'No username',
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          Expanded(
-                            child: Text(
-                              error.toString(),
-                              style: TextStyle(
+                      error:
+                          (error, stackTrace) => Row(
+                            children: [
+                              Icon(
+                                Icons.error,
                                 color: Theme.of(context).colorScheme.error,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  error.toString(),
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                      loading: () => const LinearProgressIndicator(),
+                    ),
+                    subtitle: userProfile.when(
+                      data: (data) => Text(data.email),
+                      error:
+                          (error, stackTrace) => Row(
+                            children: [
+                              Icon(
+                                Icons.error,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  error.toString(),
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                      loading: () => const LinearProgressIndicator(),
+                    ),
+                    trailing: userProfile.when(
+                      data:
+                          (data) => Text(
+                            data.mp.toString(),
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                      error:
+                          (error, stackTrace) => Row(
+                            children: [
+                              Icon(
+                                Icons.error,
+                                color: Theme.of(context).colorScheme.error,
+                              ),
+                              Expanded(
+                                child: Text(
+                                  error.toString(),
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.error,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                      loading: () => const CircularProgressIndicator(),
+                    ),
+                  ),
+                  Row(
+                    spacing: 8,
+                    children: [
+                      Expanded(
+                        child: Card(
+                          color: Theme.of(context).colorScheme.surface,
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.cyclone,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            title: conflux.when(
+                              data:
+                                  (data) => Text(
+                                    '${data.where((conflux) => conflux.portal).length}',
+                                  ),
+                              error:
+                                  (error, stackTrace) => Row(
+                                    children: [
+                                      Icon(
+                                        Icons.error,
+                                        color:
+                                            Theme.of(context).colorScheme.error,
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          error.toString(),
+                                          style: TextStyle(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.error,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              loading: () => const LinearProgressIndicator(),
+                            ),
+                            subtitle: Text(
+                              'Portals',
+                              style: TextStyle(
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                      loading: () => const LinearProgressIndicator(),
-                    ),
-                    subtitle: Text(
-                      'Portals',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-              Expanded(
-                child: Card(
-                  color: Theme.of(context).colorScheme.surface,
-                  child: ListTile(
-                    leading: Icon(
-                      Icons.electric_bolt,
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                    title: conflux.when(
-                      data: (data) => Text(
-                        '${data.where((conflux) => !conflux.portal).length}',
-                      ),
-                      error: (error, stackTrace) => Row(
-                        children: [
-                          Icon(
-                            Icons.error,
-                            color: Theme.of(context).colorScheme.error,
-                          ),
-                          Expanded(
-                            child: Text(
-                              error.toString(),
+                      Expanded(
+                        child: Card(
+                          color: Theme.of(context).colorScheme.surface,
+                          child: ListTile(
+                            leading: Icon(
+                              Icons.electric_bolt,
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                            title: conflux.when(
+                              data:
+                                  (data) => Text(
+                                    '${data.where((conflux) => !conflux.portal).length}',
+                                  ),
+                              error:
+                                  (error, stackTrace) => Row(
+                                    children: [
+                                      Icon(
+                                        Icons.error,
+                                        color:
+                                            Theme.of(context).colorScheme.error,
+                                      ),
+                                      Expanded(
+                                        child: Text(
+                                          error.toString(),
+                                          style: TextStyle(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.error,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                              loading: () => const LinearProgressIndicator(),
+                            ),
+                            subtitle: Text(
+                              'Rifts',
                               style: TextStyle(
-                                color: Theme.of(context).colorScheme.error,
+                                color: Theme.of(context).colorScheme.secondary,
                               ),
                             ),
                           ),
-                        ],
+                        ),
                       ),
-                      loading: () => const LinearProgressIndicator(),
-                    ),
-                    subtitle: Text(
-                      'Rifts',
-                      style: TextStyle(
-                        color: Theme.of(context).colorScheme.secondary,
-                      ),
-                    ),
+                    ],
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
-        ],
-      ),
     );
   }
 }

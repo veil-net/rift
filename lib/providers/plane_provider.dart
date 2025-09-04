@@ -24,3 +24,19 @@ Stream<Plane?> planeByName(Ref ref, String id) {
       .map((event) => event.map((r) => Plane.fromJson(r)).firstOrNull);
   return stream;
 }
+
+@riverpod
+class PlaneQuery extends _$PlaneQuery {
+  @override
+  String build() {
+    return '';
+  }
+
+  void setQuery(String query) {
+    state = query;
+  }
+
+  void clearQuery() {
+    state = '';
+  }
+}
