@@ -13,7 +13,7 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final userState = ref.watch(userProvider);
+    // final userState = ref.watch(userProvider);
     final serviceTier = ref.watch(userServiceTierProvider);
     final notifications = ref.watch(notificationProvider);
     final veilnetState = ref.watch(veilnetProvider);
@@ -91,24 +91,24 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
             style: TextStyle(color: Theme.of(context).colorScheme.primary),
           ),
         ),
-        TextButton(
-          onPressed: () {
-            final refreshToken = userState.session?.refreshToken;
-            if (refreshToken != null) {
-              launchUrl(
-                Uri.parse(
-                  'https://console.veilnet.org?refreshToken=$refreshToken',
-                ),
-              );
-            } else {
-              launchUrl(Uri.parse('https://console.veilnet.org'));
-            }
-          },
-          child: Text(
-            'Console',
-            style: TextStyle(color: Theme.of(context).colorScheme.primary),
-          ),
-        ),
+        // TextButton(
+        //   onPressed: () {
+        //     final refreshToken = userState.session?.refreshToken;
+        //     if (refreshToken != null) {
+        //       launchUrl(
+        //         Uri.parse(
+        //           'https://console.veilnet.org?refreshToken=$refreshToken',
+        //         ),
+        //       );
+        //     } else {
+        //       launchUrl(Uri.parse('https://console.veilnet.org'));
+        //     }
+        //   },
+        //   child: Text(
+        //     'Console',
+        //     style: TextStyle(color: Theme.of(context).colorScheme.primary),
+        //   ),
+        // ),
         IconButton(
           onPressed:
               veilnetState.isBusy

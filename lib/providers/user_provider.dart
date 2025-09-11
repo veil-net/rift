@@ -2,6 +2,7 @@
 import 'dart:convert';
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
+import 'package:hooks_riverpod/legacy.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../main.dart';
