@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -18,6 +20,16 @@ class ProfileCard extends HookConsumerWidget {
     final isBusy = useState(false);
     final usernameController = useTextEditingController();
     final formkey = useMemoized(() => GlobalKey<FormState>());
+
+    useEffect(() {
+      final timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+        ref.invalidate(userProfileProvider);
+      });
+      return () {
+        timer.cancel();
+      };
+    }, [userProfile]);
+
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(8.0),
