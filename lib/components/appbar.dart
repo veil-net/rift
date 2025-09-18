@@ -26,51 +26,51 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
       elevation: 0,
       leading: Hero(tag: 'logo', child: Image.asset('assets/images/icon.png')),
       title: serviceTier.when(
-        data: (data) => Chip(
-          label: Text(switch (data) {
-            0 => 'Community',
-            1 => 'Adventurer',
-            2 => 'Team',
-            _ => 'Unknown',
-          }, style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
+        data: (data) => ActionChip(
+          label: isLoading.value
+              ? SizedBox(width: 16, height: 16, child: const CircularProgressIndicator())
+              : Text(
+                  switch (data) {
+                    0 => 'Community',
+                    1 => 'Adventurer',
+                    2 => 'Team',
+                    _ => 'Unknown',
+                  },
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.secondary,
+                  ),
+                ),
+          onPressed: () async {
+            isLoading.value = true;
+            final currentServiceTier = await ref.read(
+              userServiceTierProvider.future,
+            );
+            if (currentServiceTier == 2) {
+              return;
+            }
+            final upgradedServiceTier = currentServiceTier + 1;
+            try {
+              final response = await api.get(
+                '/stripe/subscribe/$upgradedServiceTier',
+              );
+              final checkoutSession = response.data;
+              launchUrl(Uri.parse(checkoutSession['url']));
+              isLoading.value = false;
+            } catch (e) {
+              if (context.mounted) {
+                DialogManager.showDialog(
+                  context,
+                  e.toString(),
+                  DialogType.error,
+                );
+              }
+            }
+          },
         ),
-        error: (error, stackTrace) => const Chip(label: Text('Error')),
-        loading: () => const Chip(label: Text('Loading...')),
+        error: (error, stackTrace) => const ActionChip(label: Text('Error')),
+        loading: () => const ActionChip(label: Text('Loading...')),
       ),
       actions: [
-        if (serviceTier.value != 2)
-          TextButton(
-            onPressed: isLoading.value ? null : () async {
-              isLoading.value = true;
-              final currentServiceTier = await ref.read(
-                userServiceTierProvider.future,
-              );
-              if (currentServiceTier == 2) {
-                return;
-              }
-              final upgradedServiceTier = currentServiceTier + 1;
-              try {
-                final response = await api.get(
-                  '/stripe/subscribe/$upgradedServiceTier',
-                );
-                final checkoutSession = response.data;
-                launchUrl(Uri.parse(checkoutSession['url']));
-                isLoading.value = false;
-              } catch (e) {
-                if (context.mounted) {
-                  DialogManager.showDialog(
-                    context,
-                    e.toString(),
-                    DialogType.error,
-                  );
-                }
-              }
-            },
-            child: isLoading.value ? SizedBox(width: 20, height: 20, child: const CircularProgressIndicator()) : Text(
-              'Upgrade',
-              style: TextStyle(color: Theme.of(context).colorScheme.primary),
-            ),
-          ),
         notifications.when(
           data: (data) => IconButton(
             onPressed: data.isEmpty
@@ -105,6 +105,15 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
             ),
           ),
           loading: () => const CircularProgressIndicator(),
+        ),
+        TextButton(
+          onPressed: () {
+            launchUrl(Uri.parse('https://www.veilnet.org/docs'));
+          },
+          child: Text(
+            'Help',
+            style: TextStyle(color: Theme.of(context).colorScheme.primary),
+          ),
         ),
         // TextButton(
         //   onPressed: () {
