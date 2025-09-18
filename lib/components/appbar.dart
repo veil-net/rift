@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:go_router/go_router.dart';
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:rift/components/dialog_manager.dart';
 import 'package:rift/main.dart';
+import 'package:rift/providers/api_provider.dart';
 import 'package:rift/providers/notification_provider.dart';
 import 'package:rift/providers/user_provider.dart';
 import 'package:rift/providers/veilnet_provider.dart';
@@ -17,79 +19,92 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
     final serviceTier = ref.watch(userServiceTierProvider);
     final notifications = ref.watch(notificationProvider);
     final veilnetState = ref.watch(veilnetProvider);
+    final isLoading = useState(false);
+    final api = ref.watch(apiProvider);
     return AppBar(
       backgroundColor: Colors.transparent,
       elevation: 0,
       leading: Hero(tag: 'logo', child: Image.asset('assets/images/icon.png')),
       title: serviceTier.when(
-        data:
-            (data) => ActionChip(
-              label: Text(
-                switch (data) {
-                  0 => 'Community',
-                  1 => 'Adventurer',
-                  2 => 'Team',
-                  _ => 'Unknown',
-                },
-                style: TextStyle(
-                  color: Theme.of(context).colorScheme.secondary,
-                ),
-              ),
-              onPressed: () {
-                ref.invalidate(userServiceTierProvider);
-              },
-            ),
-        error: (error, stackTrace) => const ActionChip(label: Text('Error')),
-        loading: () => const ActionChip(label: Text('Loading...')),
+        data: (data) => Chip(
+          label: Text(switch (data) {
+            0 => 'Community',
+            1 => 'Adventurer',
+            2 => 'Team',
+            _ => 'Unknown',
+          }, style: TextStyle(color: Theme.of(context).colorScheme.secondary)),
+        ),
+        error: (error, stackTrace) => const Chip(label: Text('Error')),
+        loading: () => const Chip(label: Text('Loading...')),
       ),
       actions: [
-        notifications.when(
-          data:
-              (data) => IconButton(
-                onPressed:
-                    data.isEmpty
-                        ? () {
-                          DialogManager.showDialog(
-                            context,
-                            "No notifications",
-                            DialogType.info,
-                          );
-                        }
-                        : () {
-                          context.push('/notifications');
-                        },
-                icon: Icon(
-                  Icons.notifications,
-                  color:
-                      data.isEmpty
-                          ? Colors.grey
-                          : Theme.of(context).colorScheme.primary,
-                ),
-              ),
-          error:
-              (error, stackTrace) => IconButton(
-                onPressed: () {
+        if (serviceTier.value != 2)
+          TextButton(
+            onPressed: isLoading.value ? null : () async {
+              isLoading.value = true;
+              final currentServiceTier = await ref.read(
+                userServiceTierProvider.future,
+              );
+              if (currentServiceTier == 2) {
+                return;
+              }
+              final upgradedServiceTier = currentServiceTier + 1;
+              try {
+                final response = await api.get(
+                  '/stripe/subscribe/$upgradedServiceTier',
+                );
+                final checkoutSession = response.data;
+                launchUrl(Uri.parse(checkoutSession['url']));
+                isLoading.value = false;
+              } catch (e) {
+                if (context.mounted) {
                   DialogManager.showDialog(
                     context,
-                    "Failed to load notifications",
+                    e.toString(),
                     DialogType.error,
                   );
-                },
-                icon: Icon(
-                  Icons.notifications,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-              ),
-          loading: () => const CircularProgressIndicator(),
-        ),
-        TextButton(
-          onPressed: () {
-            launchUrl(Uri.parse('https://www.veilnet.org'));
-          },
-          child: Text(
-            'Help',
-            style: TextStyle(color: Theme.of(context).colorScheme.primary),
+                }
+              }
+            },
+            child: isLoading.value ? SizedBox(width: 20, height: 20, child: const CircularProgressIndicator()) : Text(
+              'Upgrade',
+              style: TextStyle(color: Theme.of(context).colorScheme.primary),
+            ),
           ),
+        notifications.when(
+          data: (data) => IconButton(
+            onPressed: data.isEmpty
+                ? () {
+                    DialogManager.showDialog(
+                      context,
+                      "No notifications",
+                      DialogType.info,
+                    );
+                  }
+                : () {
+                    context.push('/notifications');
+                  },
+            icon: Icon(
+              Icons.notifications,
+              color: data.isEmpty
+                  ? Colors.grey
+                  : Theme.of(context).colorScheme.primary,
+            ),
+          ),
+          error: (error, stackTrace) => IconButton(
+            onPressed: () {
+              DialogManager.showDialog(
+                context,
+                "Failed to load notifications",
+                DialogType.error,
+              );
+            },
+            icon: Icon(
+              Icons.notifications,
+              color: Theme.of(context).colorScheme.error,
+            ),
+          ),
+          loading: () => const CircularProgressIndicator(),
         ),
         // TextButton(
         //   onPressed: () {
@@ -110,34 +125,32 @@ class VeilNetAppBar extends HookConsumerWidget implements PreferredSizeWidget {
         //   ),
         // ),
         IconButton(
-          onPressed:
-              veilnetState.isBusy
-                  ? null
-                  : () async {
-                    await supabase.auth.signOut();
-                    if (veilnetState.isConnected) {
-                      try {
-                        await ref.read(veilnetProvider.notifier).disconnect();
-                      } catch (e) {
-                        if (context.mounted) {
-                          DialogManager.showDialog(
-                            context,
-                            e.toString(),
-                            DialogType.error,
-                          );
-                        }
+          onPressed: veilnetState.isBusy
+              ? null
+              : () async {
+                  await supabase.auth.signOut();
+                  if (veilnetState.isConnected) {
+                    try {
+                      await ref.read(veilnetProvider.notifier).disconnect();
+                    } catch (e) {
+                      if (context.mounted) {
+                        DialogManager.showDialog(
+                          context,
+                          e.toString(),
+                          DialogType.error,
+                        );
                       }
                     }
-                    if (context.mounted) {
-                      context.go('/login');
-                    }
-                  },
+                  }
+                  if (context.mounted) {
+                    context.go('/login');
+                  }
+                },
           icon: Icon(
             Icons.logout,
-            color:
-                veilnetState.isBusy
-                    ? Colors.grey
-                    : Theme.of(context).colorScheme.primary,
+            color: veilnetState.isBusy
+                ? Colors.grey
+                : Theme.of(context).colorScheme.primary,
           ),
         ),
       ],

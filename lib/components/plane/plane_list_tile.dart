@@ -94,6 +94,9 @@ class PlaneListTile extends HookConsumerWidget {
                     final currentServiceTier = await ref.read(
                       userServiceTierProvider.future,
                     );
+                    if (currentServiceTier == 2) {
+                      return;
+                    }
                     final upgradedServiceTier = currentServiceTier + 1;
                     try {
                       final response = await api.get(
