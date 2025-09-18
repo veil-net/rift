@@ -49,24 +49,20 @@ class RegisterForm extends HookConsumerWidget {
             email: emailController.text,
             password: passwordController.text,
           );
+          isBusy.value = false;
           if (context.mounted) {
-            DialogManager.showDialog(
-              context,
-              'Registration successful! Please check your email for verification.',
-              DialogType.success,
-            );
-            context.go('/verify-email');
+            context.go('/verify-email', extra: emailController.text);
           }
         } on AuthException catch (e) {
+          isBusy.value = false;
           if (context.mounted) {
             DialogManager.showDialog(context, e.message, DialogType.error);
           }
         } catch (e) {
+          isBusy.value = false;
           if (context.mounted) {
             DialogManager.showDialog(context, e.toString(), DialogType.error);
           }
-        } finally {
-          isBusy.value = false;
         }
       }
     }

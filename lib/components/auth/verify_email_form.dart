@@ -7,12 +7,13 @@ import 'package:rift/main.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class EmailVerificationForm extends HookConsumerWidget {
-  const EmailVerificationForm({super.key});
+  final String? email;
+  const EmailVerificationForm({super.key, this.email});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final formKey = useMemoized(() => GlobalKey<FormState>());
-    final emailController = useTextEditingController();
+    final emailController = useTextEditingController(text: email);
     final otpController = useTextEditingController();
     final isBusy = useState(false);
     final tokenSent = useState(false);
@@ -30,19 +31,20 @@ class EmailVerificationForm extends HookConsumerWidget {
           type: OtpType.email,
         );
         await Future.delayed(const Duration(seconds: 1));
+        isBusy.value = false;
         if (context.mounted) {
           context.go('/home');
         }
       } on AuthException catch (e) {
+        isBusy.value = false;
         if (context.mounted) {
           DialogManager.showDialog(context, e.message, DialogType.error);
         }
       } catch (e) {
+        isBusy.value = false;
         if (context.mounted) {
           DialogManager.showDialog(context, e.toString(), DialogType.error);
         }
-      } finally {
-        isBusy.value = false;
       }
     }
 
@@ -58,16 +60,17 @@ class EmailVerificationForm extends HookConsumerWidget {
           );
         }
         tokenSent.value = true;
+        isBusy.value = false;
       } on AuthException catch (e) {
+        isBusy.value = false;
         if (context.mounted) {
           DialogManager.showDialog(context, e.message, DialogType.error);
         }
       } catch (e) {
+        isBusy.value = false;
         if (context.mounted) {
           DialogManager.showDialog(context, e.toString(), DialogType.error);
         }
-      } finally {
-        isBusy.value = false;
       }
     }
 
@@ -78,7 +81,13 @@ class EmailVerificationForm extends HookConsumerWidget {
           key: formKey,
           child: Column(
             mainAxisSize: MainAxisSize.min,
+            spacing: 16,
             children: [
+              Text(
+                'Please enter the verification token sent to your email (If you did not receive the token, please check your spam folder and resend the token after 1 minute)',
+                style: Theme.of(context).textTheme.bodyMedium,
+                textAlign: TextAlign.justify,
+              ),
               TextFormField(
                 controller: emailController,
                 decoration: InputDecoration(
@@ -100,7 +109,6 @@ class EmailVerificationForm extends HookConsumerWidget {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
               TextFormField(
                 controller: otpController,
                 decoration: InputDecoration(
@@ -117,13 +125,13 @@ class EmailVerificationForm extends HookConsumerWidget {
                   return null;
                 },
               ),
-              const SizedBox(height: 16),
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
                   FilledButton.icon(
-                    onPressed:
-                        isBusy.value || tokenSent.value ? null : sendToken,
+                    onPressed: isBusy.value || tokenSent.value
+                        ? null
+                        : sendToken,
                     label: const Text('Resend Token'),
                     icon: const Icon(Icons.send),
                   ),
@@ -134,7 +142,6 @@ class EmailVerificationForm extends HookConsumerWidget {
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
               TextButton(
                 onPressed: () {
                   context.go('/login');

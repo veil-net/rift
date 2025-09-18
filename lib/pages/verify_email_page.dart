@@ -4,7 +4,8 @@ import 'package:rift/components/background.dart';
 import 'package:rift/components/auth/verify_email_form.dart';
 
 class VerifyEmailPage extends HookConsumerWidget {
-  const VerifyEmailPage({super.key});
+  final String? email;
+  const VerifyEmailPage({super.key, this.email});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -45,7 +46,7 @@ class VerifyEmailPage extends HookConsumerWidget {
                             offset: Offset(0, value * 100),
                             child: child,
                           ),
-                      child: EmailVerificationForm(),
+                      child: EmailVerificationForm(email: email),
                     ),
                   ],
                 ),

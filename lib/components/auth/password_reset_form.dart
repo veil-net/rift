@@ -30,16 +30,17 @@ class PasswordResetForm extends HookConsumerWidget {
         isBusy.value = true;
         await supabase.auth.resetPasswordForEmail(emailController.text);
         emailSent.value = true;
+        isBusy.value = false;
       } on AuthException catch (e) {
+        isBusy.value = false;
         if (context.mounted) {
           DialogManager.showDialog(context, e.message, DialogType.error);
         }
       } catch (e) {
+        isBusy.value = false;
         if (context.mounted) {
           DialogManager.showDialog(context, e.toString(), DialogType.error);
         }
-      } finally {
-        isBusy.value = false;
       }
     }
 
@@ -58,45 +59,20 @@ class PasswordResetForm extends HookConsumerWidget {
         await supabase.auth.updateUser(
           UserAttributes(password: passwordController.text),
         );
+        isBusy.value = false;
         if (context.mounted) {
           context.go('/home');
         }
       } on AuthException catch (e) {
+        isBusy.value = false;
         if (context.mounted) {
-          showDialog(
-            context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: const Text('Error'),
-                  content: Text(e.message),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-          );
+          DialogManager.showDialog(context, e.message, DialogType.error);
         }
       } catch (e) {
-        if (context.mounted) {
-          showDialog(
-            context: context,
-            builder:
-                (context) => AlertDialog(
-                  title: const Text('Error'),
-                  content: Text(e.toString()),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('OK'),
-                    ),
-                  ],
-                ),
-          );
-        }
-      } finally {
         isBusy.value = false;
+        if (context.mounted) {
+          DialogManager.showDialog(context, e.toString(), DialogType.error);
+        }
       }
     }
 

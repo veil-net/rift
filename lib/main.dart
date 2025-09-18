@@ -72,7 +72,7 @@ class MyApp extends HookConsumerWidget {
         ),
         GoRoute(
           path: '/verify-email',
-          builder: (context, state) => const VerifyEmailPage(),
+          builder: (context, state) => VerifyEmailPage(email: state.extra as String?),
         ),
         GoRoute(
           path: '/password-reset',

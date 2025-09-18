@@ -29,19 +29,20 @@ class LoginForm extends HookConsumerWidget {
           password: passwordController.text,
         );
         await Future.delayed(const Duration(seconds: 1));
+        isBusy.value = false;
         if (context.mounted) {
           context.go('/home');
         }
       } on AuthException catch (e) {
+        isBusy.value = false;
         if (context.mounted) {
           DialogManager.showDialog(context, e.message, DialogType.error);
         }
       } catch (e) {
+        isBusy.value = false;
         if (context.mounted) {
           DialogManager.showDialog(context, e.toString(), DialogType.error);
         }
-      } finally {
-        isBusy.value = false;
       }
     }
 

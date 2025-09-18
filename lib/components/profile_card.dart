@@ -15,6 +15,7 @@ class ProfileCard extends HookConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final user = ref.watch(userProvider);
     final userProfile = ref.watch(userProfileProvider);
     final confluxes = ref.watch(confluxesProvider);
     final isBusy = useState(false);
@@ -119,6 +120,26 @@ class ProfileCard extends HookConsumerWidget {
                           ],
                         ),
                       ),
+                subtitle: user.user?.emailConfirmedAt != null
+                    ? Text(
+                        profile.email,
+                        style: Theme.of(context).textTheme.labelMedium
+                            ?.copyWith(
+                              color: Theme.of(context).colorScheme.secondary,
+                            ),
+                      )
+                    : TextButton(
+                        onPressed: () {
+                          context.push('/verify-email');
+                        },
+                        child: Text(
+                          'Verify Email',
+                          style: Theme.of(context).textTheme.labelMedium
+                              ?.copyWith(
+                                color: Theme.of(context).colorScheme.secondary,
+                              ),
+                        ),
+                      ),
                 trailing: Text(
                   '${profile.mp} MP',
                   overflow: TextOverflow.ellipsis,
@@ -126,35 +147,6 @@ class ProfileCard extends HookConsumerWidget {
                     color: Theme.of(context).colorScheme.secondary,
                   ),
                 ),
-                // trailing: serviceTier.when(
-                //   data: (data) {
-                //     if (ser)
-                //   },
-                //   error: (error, stackTrace) => IconButton(
-                //     onPressed: () {
-                //       ref.invalidate(userServiceTierProvider);
-                //     },
-                //     icon: Icon(Icons.refresh),
-                //   ),
-                //   loading: () => CircularProgressIndicator(),
-                // ),
-                // trailing: Text(
-                //   profile.email,
-                //   overflow: TextOverflow.ellipsis,
-                //   style: TextStyle(
-                //     color: Theme.of(context).colorScheme.secondary,
-                //   ),
-                // ),
-                // trailing: IconButton(
-                //   icon: const Icon(Icons.help),
-                //   onPressed: () {
-                //     DialogManager.showDialog(
-                //       context,
-                //       'The MP (Measurement of Participation) system enables users to access VeilNet services without a subscription. Users can earn MP by self-hosting VeilNet Portals under public domains, with each Portal generating 1 MP per second. These MP are then consumed by the user’s Public Rifts at the same rate. This system incentivizes community hosting and rewards users with continued access to the network in a decentralized, contribution-based model.',
-                //       DialogType.info,
-                //     );
-                //   },
-                // ),
               ),
               error: (error, stackTrace) => Text('Error: $error'),
               loading: () => const Center(child: CircularProgressIndicator()),
