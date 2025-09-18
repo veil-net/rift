@@ -55,7 +55,7 @@ class EmailVerificationForm extends HookConsumerWidget {
         if (context.mounted) {
           DialogManager.showDialog(
             context,
-            'Token resent! Please check your email for the new token.',
+            'Token sent! Please check your email for the new token.',
             DialogType.success,
           );
         }
@@ -132,7 +132,7 @@ class EmailVerificationForm extends HookConsumerWidget {
                     onPressed: isBusy.value || tokenSent.value
                         ? null
                         : sendToken,
-                    label: const Text('Resend Token'),
+                    label: const Text('Send Token'),
                     icon: const Icon(Icons.send),
                   ),
                   FilledButton.icon(

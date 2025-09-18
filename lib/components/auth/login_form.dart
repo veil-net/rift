@@ -133,7 +133,7 @@ class LoginForm extends HookConsumerWidget {
                 onPressed: () {
                   context.go('/verify-email');
                 },
-                child: const Text('Need to verify your email?'),
+                child: const Text('Verify or login with email'),
               ),
             ],
           ),

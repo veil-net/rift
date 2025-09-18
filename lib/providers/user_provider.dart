@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:hooks_riverpod/hooks_riverpod.dart';
 import 'package:hooks_riverpod/legacy.dart';
+import 'package:rift/providers/api_provider.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../main.dart';
@@ -70,8 +71,6 @@ class UserProfile {
     this.username,
   });
 
-
-
   UserProfile copyWith({
     String? id,
     DateTime? created_at,
@@ -114,7 +113,8 @@ class UserProfile {
 
   String toJson() => json.encode(toMap());
 
-  factory UserProfile.fromJson(String source) => UserProfile.fromMap(json.decode(source) as Map<String, dynamic>);
+  factory UserProfile.fromJson(String source) =>
+      UserProfile.fromMap(json.decode(source) as Map<String, dynamic>);
 
   @override
   String toString() {
@@ -124,35 +124,33 @@ class UserProfile {
   @override
   bool operator ==(covariant UserProfile other) {
     if (identical(this, other)) return true;
-  
-    return 
-      other.id == id &&
-      other.created_at == created_at &&
-      other.email == email &&
-      other.is_superuser == is_superuser &&
-      other.mp == mp &&
-      other.username == username;
+
+    return other.id == id &&
+        other.created_at == created_at &&
+        other.email == email &&
+        other.is_superuser == is_superuser &&
+        other.mp == mp &&
+        other.username == username;
   }
 
   @override
   int get hashCode {
     return id.hashCode ^
-      created_at.hashCode ^
-      email.hashCode ^
-      is_superuser.hashCode ^
-      mp.hashCode ^
-      username.hashCode;
+        created_at.hashCode ^
+        email.hashCode ^
+        is_superuser.hashCode ^
+        mp.hashCode ^
+        username.hashCode;
   }
 }
 
 final userProfileProvider = FutureProvider<UserProfile>((ref) async {
   final userState = ref.watch(userProvider);
-  final response =
-      await supabase
-          .from('profiles')
-          .select('*')
-          .eq('id', userState.user!.id)
-          .single();
+  final response = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userState.user!.id)
+      .single();
   return UserProfile.fromMap(response);
 });
 
@@ -337,30 +335,24 @@ class UserSubscription {
       service_tier: map['service_tier'] as int,
       customer: map['customer'] as String,
       created_at: DateTime.parse(map['created_at'] as String),
-      ended_at:
-          map['ended_at'] != null
-              ? DateTime.parse(map['ended_at'] as String)
-              : null,
-      cancel_at:
-          map['cancel_at'] != null
-              ? DateTime.parse(map['cancel_at'] as String)
-              : null,
-      current_period_start:
-          map['current_period_start'] != null
-              ? DateTime.parse(map['current_period_start'] as String)
-              : null,
-      current_period_end:
-          map['current_period_end'] != null
-              ? DateTime.parse(map['current_period_end'] as String)
-              : null,
-      trial_start:
-          map['trial_start'] != null
-              ? DateTime.parse(map['trial_start'] as String)
-              : null,
-      trial_end:
-          map['trial_end'] != null
-              ? DateTime.parse(map['trial_end'] as String)
-              : null,
+      ended_at: map['ended_at'] != null
+          ? DateTime.parse(map['ended_at'] as String)
+          : null,
+      cancel_at: map['cancel_at'] != null
+          ? DateTime.parse(map['cancel_at'] as String)
+          : null,
+      current_period_start: map['current_period_start'] != null
+          ? DateTime.parse(map['current_period_start'] as String)
+          : null,
+      current_period_end: map['current_period_end'] != null
+          ? DateTime.parse(map['current_period_end'] as String)
+          : null,
+      trial_start: map['trial_start'] != null
+          ? DateTime.parse(map['trial_start'] as String)
+          : null,
+      trial_end: map['trial_end'] != null
+          ? DateTime.parse(map['trial_end'] as String)
+          : null,
       status: map['status'] as String,
     );
   }
@@ -426,9 +418,7 @@ final userSubscriptionProvider = FutureProvider<List<UserSubscription>>((
 });
 
 final userServiceTierProvider = FutureProvider<int>((ref) async {
-  final userSubscription = await ref.watch(userSubscriptionProvider.future);
-  if (userSubscription.isEmpty) return 0;
-  return userSubscription
-      .map((sub) => sub.service_tier)
-      .reduce((a, b) => a > b ? a : b);
+  final api = ref.watch(apiProvider);
+  final response = await api.get('/stripe/service-tier');
+  return response.data as int;
 });

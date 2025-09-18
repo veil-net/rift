@@ -25,11 +25,12 @@ class ProfileCard extends HookConsumerWidget {
     useEffect(() {
       final timer = Timer.periodic(const Duration(seconds: 5), (timer) {
         ref.invalidate(userProfileProvider);
+        ref.invalidate(userServiceTierProvider);
       });
       return () {
         timer.cancel();
       };
-    }, [userProfile]);
+    }, []);
 
     return Card(
       child: Padding(
